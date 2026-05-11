@@ -7,4 +7,4 @@ require $GLOBALS['_composer_autoload_path'] ?? __DIR__ . '/../vendor/autoload.ph
 
 use Tetrode\Throwpedia\Throwpedia;
 
-(new Throwpedia())->run($argv);
+new Throwpedia()->run($argv);

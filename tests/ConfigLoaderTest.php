@@ -17,13 +17,6 @@ class ConfigLoaderTest extends TestCase
         $this->loader = new ConfigLoader(new NullOutput());
     }
 
-    public function testGetVerbosity(): void
-    {
-        $this->assertEquals(0, $this->loader->getVerbosity(['bin/throwpedia']));
-        $this->assertEquals(1, $this->loader->getVerbosity(['bin/throwpedia', '-v']));
-        $this->assertEquals(2, $this->loader->getVerbosity(['bin/throwpedia', '-vv']));
-        $this->assertEquals(1, $this->loader->getVerbosity(['bin/throwpedia', '-v', '--other']));
-    }
 
     public function testGetConfigFile(): void
     {

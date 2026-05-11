@@ -1,0 +1,14 @@
+<?php
+
+namespace Tetrode\Throwpedia\Attributes;
+
+#[\Attribute(\Attribute::TARGET_METHOD | \Attribute::IS_REPEATABLE)]
+class ExceptionReason
+{
+    public function __construct(
+        public string $code = 'UNKNOWN',
+        public string $technicalReason = 'technical reason',
+        public string $businessReason = 'business reason'
+    ) {
+    }
+}

@@ -16,7 +16,6 @@ class Analyzer
     private Parser $parser;
     private Extractor $extractor;
     private bool $allowDirectNew = false;
-    private int $verbosity = 0;
     /** @var string[] */
     private array $targetAttributes = ['ExceptionReason'];
 
@@ -37,11 +36,6 @@ class Analyzer
         }
     }
 
-    public function setVerbosity(int $level): void
-    {
-        $this->verbosity = $level;
-        $this->extractor->setVerbosity($level);
-    }
 
     /**
      * @param array<string> $files
@@ -88,21 +82,49 @@ class Analyzer
         $model = [];
         foreach ($rawResults as $methodData) {
             $location = sprintf('%s::%s', $methodData['class'], $methodData['method']);
-            $firstException = $methodData['throws'][0] ?? 'unknown';
+            $methodExceptions = array_unique($methodData['throws']);
+            $exceptionsStr = implode(', ', $methodExceptions) ?: 'unknown';
 
             foreach ($methodData['attributes'] as $attr) {
                 $code = $attr['code'];
-                if (!isset($model[$code])) {
-                    $model[$code] = [
-                        'business'    => $attr['business'],
-                        'technical'   => $attr['technical'],
-                        'exception'   => $firstException,
-                        'thrown_from' => [],
-                    ];
+                $tech = $attr['technical'];
+                $biz = $attr['business'];
+
+                $foundKey = null;
+                foreach ($model as $existingKey => $entry) {
+                    $entryCode = $entry['code'] ?? $existingKey;
+                    if ($entryCode === $code && $entry['technical'] === $tech && $entry['business'] === $biz) {
+                        $foundKey = $existingKey;
+                        break;
+                    }
                 }
 
-                if (!\in_array($location, $model[$code]['thrown_from'], true)) {
-                    $model[$code]['thrown_from'][] = $location;
+                if (null !== $foundKey) {
+                    if (!\in_array($location, $model[$foundKey]['thrown_from'], true)) {
+                        $model[$foundKey]['thrown_from'][] = $location;
+                    }
+                    // Add any new exceptions from this method to the existing entry
+                    $existingExceptions = explode(', ', $model[$foundKey]['exception']);
+                    foreach ($methodExceptions as $ex) {
+                        if (!\in_array($ex, $existingExceptions, true)) {
+                            $existingExceptions[] = $ex;
+                        }
+                    }
+                    $model[$foundKey]['exception'] = implode(', ', array_filter($existingExceptions));
+                } else {
+                    $uniqueKey = $code;
+                    $counter = 1;
+                    while (isset($model[$uniqueKey])) {
+                        $uniqueKey = $code . '_' . $counter++;
+                    }
+
+                    $model[$uniqueKey] = [
+                        'code'        => $code,
+                        'business'    => $biz,
+                        'technical'   => $tech,
+                        'exception'   => $exceptionsStr,
+                        'thrown_from' => [$location],
+                    ];
                 }
             }
         }

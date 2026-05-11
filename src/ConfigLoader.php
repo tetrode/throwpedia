@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tetrode\Throwpedia;
 
 use Nette\Neon\Neon;
+use Tetrode\Throwpedia\Attributes\ExceptionReason;
 use Tetrode\Throwpedia\Exception\ConfigurationException;
 use Tetrode\Throwpedia\IO\OutputInterface;
 
@@ -26,6 +27,8 @@ class ConfigLoader
     /**
      * @return array<string, mixed>
      */
+    #[ExceptionReason('load', 'configuration file not found', 'configuration file is missing')]
+    #[ExceptionReason('load', 'configuration file not parsable', 'configuration file is not parsable or empty')]
     public function load(?string $configFile, string $defaultConfigFileName): array
     {
         $projectRoot = $this->findProjectRoot();
@@ -53,26 +56,11 @@ class ConfigLoader
         return $this->interactiveSetup($defaultConfigFile);
     }
 
-    /**
-     * @param string[] $argv
-     */
-    public function getVerbosity(array $argv): int
-    {
-        $verbosity = 0;
-        foreach ($argv as $arg) {
-            if ('-vv' === $arg) {
-                return 2;
-            }
-            if ('-v' === $arg) {
-                $verbosity = 1;
-            }
-        }
-        return $verbosity;
-    }
 
     /**
      * @param string[] $argv
      */
+    #[ExceptionReason('load', 'configuration file not found', 'configuration file is missing')]
     public function getConfigFile(array $argv): ?string
     {
         $count = \count($argv);

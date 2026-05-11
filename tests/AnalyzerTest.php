@@ -86,8 +86,9 @@ PHP;
         $analyzer->analyze([$this->tempFile]);
         $errors = $analyzer->getValidationErrors();
 
-        $this->assertCount(1, $errors);
+        $this->assertCount(2, $errors);
         $this->assertStringContainsString("Direct 'new' usage", $errors[0]);
+        $this->assertStringContainsString('Missing #[ExceptionReason]', $errors[1]);
     }
 
     public function testAllowDirectNewInModel(): void
@@ -191,11 +192,12 @@ PHP;
         $analyzer = new Analyzer($this->output);
         $model = $analyzer->analyze([$this->tempFile]);
 
-        // It should probably just have one entry for 'DUP'
-        $this->assertCount(1, $model);
+        // It should now have two entries because reasons are different
+        $this->assertCount(2, $model);
         $this->assertArrayHasKey('DUP', $model);
-        // The first one wins based on current implementation
+        $this->assertArrayHasKey('DUP_1', $model);
         $this->assertEquals('Biz 1', $model['DUP']['business']);
+        $this->assertEquals('Biz 2', $model['DUP_1']['business']);
         $this->assertEquals(['MyClass::methodWithDuplicateCodes'], $model['DUP']['thrown_from']);
     }
 
@@ -245,8 +247,8 @@ PHP;
         $model = $analyzer->analyze([$this->tempFile]);
 
         $this->assertCount(2, $model);
-        // Currently, it just takes the first exception found in the method for all its attributes
-        $this->assertEquals('Exc1::error', $model['E1']['exception']);
-        $this->assertEquals('Exc1::error', $model['E2']['exception']);
+        // It should now list all exceptions found in the method for all its attributes
+        $this->assertEquals('Exc1::error, Exc2::error', $model['E1']['exception']);
+        $this->assertEquals('Exc1::error, Exc2::error', $model['E2']['exception']);
     }
 }

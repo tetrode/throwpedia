@@ -23,16 +23,15 @@ class Throwpedia
     public function run(array $argv): void
     {
         $configLoader = new ConfigLoader($this->output);
-        $verbosity = $configLoader->getVerbosity($argv);
         $configFile = $configLoader->getConfigFile($argv);
         $config = $configLoader->load($configFile, 'throwpedia.neon');
         $projectRoot = $configLoader->findProjectRoot();
 
         $files = $this->collectFiles($config['source'] ?? ['src'], $projectRoot);
-        $analyzer = $this->initAnalyzer($config, $verbosity);
+        $analyzer = $this->initAnalyzer($config);
 
         $model = $analyzer->analyze($files);
-        $this->processResults($model, $config['outputs'] ?? null, $verbosity, $projectRoot);
+        $this->processResults($model, $config['outputs'] ?? null, $projectRoot);
 
         $this->output->writeln("Analysis complete.");
 
@@ -77,7 +76,7 @@ class Throwpedia
     /**
      * @param array<string, mixed> $config
      */
-    private function initAnalyzer(array $config, int $verbosity): Analyzer
+    private function initAnalyzer(array $config): Analyzer
     {
         $analyzer = new Analyzer(
             $this->output,
@@ -86,7 +85,6 @@ class Throwpedia
                 'allowDirectNew' => $config['allowDirectNew'] ?? false,
             ]
         );
-        $analyzer->setVerbosity($verbosity);
 
         return $analyzer;
     }
@@ -94,7 +92,7 @@ class Throwpedia
     /**
      * @param array<string, mixed> $model
      */
-    private function processResults(array $model, mixed $outputs, int $verbosity, string $projectRoot): void
+    private function processResults(array $model, mixed $outputs, string $projectRoot): void
     {
         if (empty($outputs)) {
             $this->output->write(Renderers::toText($model));
@@ -116,9 +114,7 @@ class Throwpedia
 
             if (null !== $content) {
                 file_put_contents($fullPath, $content);
-                if ($verbosity >= 1) {
-                    $this->output->writeln("Generated: $fullPath");
-                }
+                $this->output->writeln("Generated: $fullPath");
             } else {
                 $this->output->warning("Unknown output extension '$extension' for $fullPath");
             }

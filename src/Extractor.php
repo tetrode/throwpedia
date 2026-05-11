@@ -35,8 +35,6 @@ class Extractor extends NodeVisitorAbstract
     /** @var array<string> */
     private array $targetAttributes = ['ExceptionReason'];
 
-    private int $verbosity = 0;
-
     public function __construct(
         private readonly OutputInterface $output,
     ) {
@@ -50,10 +48,6 @@ class Extractor extends NodeVisitorAbstract
         $this->targetAttributes = $attributes;
     }
 
-    public function setVerbosity(int $level): void
-    {
-        $this->verbosity = $level;
-    }
 
     public function setCurrentFile(string $file): void
     {
@@ -63,10 +57,6 @@ class Extractor extends NodeVisitorAbstract
         $this->currentMethod = null;
         $this->currentFunction = null;
         $this->currentMethodKey = null;
-
-        if ($this->verbosity >= 1) {
-            $this->output->writeln("Analyzing file: $file");
-        }
     }
 
     public function enterNode(Node $node): null
@@ -100,10 +90,6 @@ class Extractor extends NodeVisitorAbstract
         $methodName = $node->name->toString();
         $fullClassName = ($this->currentNamespace ? $this->currentNamespace . '\\' : '') . ($this->currentClass ?? '');
 
-        if ($this->verbosity >= 2) {
-            $this->output->writeln("  Analyzing method: $fullClassName::$methodName");
-        }
-
         $attributes = $this->extractAttributes($node);
 
         $this->currentMethodKey = $this->currentFile . ':' . $node->getLine();
@@ -122,10 +108,6 @@ class Extractor extends NodeVisitorAbstract
         $this->currentFunction = $node;
         $functionName = $node->name->toString();
         $fullNamespace = ($this->currentNamespace ? $this->currentNamespace . '\\' : '');
-
-        if ($this->verbosity >= 2) {
-            $this->output->writeln("  Analyzing function: $fullNamespace$functionName");
-        }
 
         $attributes = $this->extractAttributes($node);
 
@@ -200,12 +182,17 @@ class Extractor extends NodeVisitorAbstract
         } elseif ($node->expr instanceof New_) {
             $class = $node->expr->class;
             if ($class instanceof Name) {
+                $className = $class->toString();
+                if ($this->currentMethodKey && isset($this->methods[$this->currentMethodKey])) {
+                    $this->methods[$this->currentMethodKey]['throws'][] = $className;
+                }
+
                 $this->directNewThrows[] = [
                     'file'      => $this->currentFile,
                     'line'      => $node->getLine(),
                     'class'     => ($this->currentNamespace ? $this->currentNamespace . '\\' : '') . ($this->currentClass ?? ''),
                     'method'    => ($this->currentMethod ? $this->currentMethod->name->toString() : ($this->currentFunction ? $this->currentFunction->name->toString() : 'unknown')),
-                    'exception' => $class->toString(),
+                    'exception' => $className,
                 ];
             }
         }

@@ -30,7 +30,8 @@ class Renderers
         $md .= "| Code | Business Description | Technical Description | Exception | Thrown From |\n";
         $md .= "|------|----------------------|-----------------------|-----------|-------------|\n";
 
-        foreach ($model as $code => $data) {
+        foreach ($model as $key => $data) {
+            $code = $data['code'] ?? $key;
             $business = str_replace('|', '\\|', (string)$data['business']);
             $technical = str_replace('|', '\\|', (string)$data['technical']);
             $thrownFrom = implode('<br>', $data['thrown_from']);
@@ -45,7 +46,8 @@ class Renderers
         $text = "Business Exceptions Catalog\n";
         $text .= str_repeat('=', 27) . "\n\n";
 
-        foreach ($model as $code => $data) {
+        foreach ($model as $key => $data) {
+            $code = $data['code'] ?? $key;
             $text .= "[$code]\n";
             $text .= "  Business:  {$data['business']}\n";
             $text .= "  Technical: {$data['technical']}\n";
