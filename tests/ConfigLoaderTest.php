@@ -62,6 +62,7 @@ class ConfigLoaderTest extends TestCase
     {
         $input = "src_dir1, src_dir2\nMyException\n./out\ny\n";
         $inputStream = fopen('php://memory', 'r+');
+        $this->assertIsResource($inputStream);
         fwrite($inputStream, $input);
         rewind($inputStream);
 

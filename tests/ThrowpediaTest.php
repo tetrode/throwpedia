@@ -61,6 +61,7 @@ class ThrowpediaTest extends TestCase
 
         // We need to change CWD because ConfigLoader::findProjectRoot and collectFiles use it or relative paths
         $oldCwd = getcwd();
+        $this->assertIsString($oldCwd);
         chdir($this->tempDir);
 
         try {
@@ -72,7 +73,9 @@ class ThrowpediaTest extends TestCase
             $this->assertStringContainsString('Analysis complete.', $output);
             $this->assertFileExists($this->tempDir . '/output.json');
 
-            $json = json_decode(file_get_contents($this->tempDir . '/output.json'), true);
+            $contents = file_get_contents($this->tempDir . '/output.json');
+            $this->assertIsString($contents);
+            $json = json_decode($contents, true);
             $this->assertArrayHasKey('CODE1', $json);
         } finally {
             chdir($oldCwd);
@@ -87,6 +90,7 @@ class ThrowpediaTest extends TestCase
             NEON;
         file_put_contents($this->tempDir . '/throwpedia.neon', $config);
         $oldCwd = getcwd();
+        $this->assertIsString($oldCwd);
         chdir($this->tempDir);
 
         try {
@@ -110,6 +114,7 @@ class ThrowpediaTest extends TestCase
             NEON;
         file_put_contents($this->tempDir . '/throwpedia.neon', $config);
         $oldCwd = getcwd();
+        $this->assertIsString($oldCwd);
         chdir($this->tempDir);
 
         try {
@@ -137,6 +142,7 @@ class ThrowpediaTest extends TestCase
             NEON;
         file_put_contents($this->tempDir . '/throwpedia.neon', $config);
         $oldCwd = getcwd();
+        $this->assertIsString($oldCwd);
         chdir($this->tempDir);
 
         try {
@@ -145,7 +151,9 @@ class ThrowpediaTest extends TestCase
             $throwpedia->run(['bin/throwpedia', '-f', 'throwpedia.neon']);
 
             $this->assertFileExists($this->tempDir . '/out.json');
-            $json = json_decode(file_get_contents($this->tempDir . '/out.json'), true);
+            $contents = file_get_contents($this->tempDir . '/out.json');
+            $this->assertIsString($contents);
+            $json = json_decode($contents, true);
             $this->assertArrayHasKey('SUB', $json);
         } finally {
             chdir($oldCwd);
@@ -165,6 +173,7 @@ class ThrowpediaTest extends TestCase
             NEON;
         file_put_contents($this->tempDir . '/throwpedia.neon', $config);
         $oldCwd = getcwd();
+        $this->assertIsString($oldCwd);
         chdir($this->tempDir);
 
         try {
@@ -172,7 +181,9 @@ class ThrowpediaTest extends TestCase
             $throwpedia = new Throwpedia($bufferedOutput);
             $throwpedia->run(['bin/throwpedia', '-f', 'throwpedia.neon']);
 
-            $json = json_decode(file_get_contents($this->tempDir . '/single.json'), true);
+            $contents = file_get_contents($this->tempDir . '/single.json');
+            $this->assertIsString($contents);
+            $json = json_decode($contents, true);
             $this->assertArrayHasKey('SINGLE', $json);
         } finally {
             chdir($oldCwd);
@@ -189,6 +200,7 @@ class ThrowpediaTest extends TestCase
             NEON;
         file_put_contents($this->tempDir . '/throwpedia.neon', $config);
         $oldCwd = getcwd();
+        $this->assertIsString($oldCwd);
         chdir($this->tempDir);
 
         try {
@@ -216,6 +228,7 @@ class ThrowpediaTest extends TestCase
             NEON;
         file_put_contents($this->tempDir . '/throwpedia.neon', $config);
         $oldCwd = getcwd();
+        $this->assertIsString($oldCwd);
         chdir($this->tempDir);
 
         try {

@@ -95,6 +95,7 @@ class Analyzer
      */
     private function buildModel(array $rawResults, array $directNew): array
     {
+        /** @var array<string, array{code?: string, business: string, technical: string, exception: string, thrown_from: array<string>}> $model */
         $model = [];
         foreach ($rawResults as $methodData) {
             $location = \sprintf('%s::%s', $methodData['class'], $methodData['method']);
@@ -116,17 +117,19 @@ class Analyzer
                 }
 
                 if (null !== $foundKey) {
-                    if (!\in_array($location, $model[$foundKey]['thrown_from'], true)) {
-                        $model[$foundKey]['thrown_from'][] = $location;
+                    $entry = $model[$foundKey];
+                    if (!\in_array($location, $entry['thrown_from'], true)) {
+                        $entry['thrown_from'][] = $location;
                     }
                     // Add any new exceptions from this method to the existing entry
-                    $existingExceptions = explode(', ', $model[$foundKey]['exception']);
+                    $existingExceptions = explode(', ', $entry['exception']);
                     foreach ($methodExceptions as $ex) {
                         if (!\in_array($ex, $existingExceptions, true)) {
                             $existingExceptions[] = $ex;
                         }
                     }
-                    $model[$foundKey]['exception'] = implode(', ', array_filter($existingExceptions));
+                    $entry['exception'] = implode(', ', array_filter($existingExceptions));
+                    $model[$foundKey] = $entry;
                 } else {
                     $uniqueKey = $code;
                     $counter = 1;
@@ -163,7 +166,7 @@ class Analyzer
     }
 
     /**
-     * @param array<string, mixed> $model
+     * @param array<string, array{code?: string, business: string, technical: string, exception: string, thrown_from: array<string>}> $model
      * @param array<array{file: string, line: int, class: string, method: string, exception: string}> $directNew
      */
     private function appendDirectNewThrows(array &$model, array $directNew): void

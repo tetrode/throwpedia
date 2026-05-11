@@ -29,6 +29,7 @@ class ExtractorTest extends TestCase
     private function analyzeCode(string $code): array
     {
         $stmts = $this->parser->parse($code);
+        $this->assertIsArray($stmts);
         $traverser = new NodeTraverser();
         $traverser->addVisitor(new NameResolver());
         $stmts = $traverser->traverse($stmts);
@@ -56,6 +57,7 @@ class ExtractorTest extends TestCase
 
         $this->assertCount(1, $results);
         $key = array_key_first($results);
+        $this->assertIsString($key);
         $data = $results[$key];
 
         $this->assertEquals('App\MyClass', $data['class']);
@@ -102,6 +104,7 @@ class ExtractorTest extends TestCase
         $results = $this->analyzeCode($code);
 
         $key = array_key_first($results);
+        $this->assertIsString($key);
         $attr = $results[$key]['attributes'][0];
         $this->assertEquals('ERR_POS', $attr['code']);
         $this->assertEquals('Tech Pos', $attr['technical']);
@@ -159,6 +162,7 @@ class ExtractorTest extends TestCase
 
         $this->assertCount(1, $results);
         $key = array_key_first($results);
+        $this->assertIsString($key);
         $attrs = $results[$key]['attributes'];
 
         $this->assertCount(2, $attrs);
@@ -182,6 +186,7 @@ class ExtractorTest extends TestCase
         $results = $this->analyzeCode($code);
         $this->assertCount(1, $results);
         $data = reset($results);
+        $this->assertIsArray($data);
         $this->assertEquals('App\MyTrait', $data['class']);
         $this->assertEquals('traitMethod', $data['method']);
     }
@@ -199,6 +204,7 @@ class ExtractorTest extends TestCase
         $results = $this->analyzeCode($code);
         $this->assertCount(1, $results);
         $data = reset($results);
+        $this->assertIsArray($data);
         $this->assertEquals('', $data['class']);
         $this->assertEquals('myGlobalFunction', $data['method']);
     }
