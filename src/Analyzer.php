@@ -14,6 +14,8 @@ use Tetrode\Throwpedia\DTO\DirectNewThrow;
 use Tetrode\Throwpedia\DTO\ExceptionCatalog;
 use Tetrode\Throwpedia\DTO\ExceptionModelEntry;
 use Tetrode\Throwpedia\DTO\ExtractionResults;
+use Tetrode\Throwpedia\DTO\ProjectInfo;
+use Tetrode\Throwpedia\DTO\ScanMeta;
 use Tetrode\Throwpedia\DTO\ValidationIssue;
 use Tetrode\Throwpedia\IO\OutputInterface;
 
@@ -42,9 +44,8 @@ class Analyzer
 
     /**
      * @param string[] $files
-     * @param array{version: string, scan_time: string} $meta
      */
-    public function analyze(array $files, array $meta = ['version' => '0.0.0', 'scan_time' => '']): ExceptionCatalog
+    public function analyze(array $files, ScanMeta $meta = new ScanMeta()): ExceptionCatalog
     {
         $nameResolver = new NameResolver();
         $resolverTraverser = new NodeTraverser();
@@ -77,10 +78,7 @@ class Analyzer
         return $this->buildModel($this->extractor->getExtractionResults(), $meta);
     }
 
-    /**
-     * @param array{version: string, scan_time: string} $meta
-     */
-    public function buildModel(ExtractionResults $results, array $meta = ['version' => '0.0.0', 'scan_time' => '']): ExceptionCatalog
+    public function buildModel(ExtractionResults $results, ScanMeta $meta = new ScanMeta()): ExceptionCatalog
     {
         /** @var array<string, ExceptionModelEntry> $model */
         $model = [];
@@ -161,29 +159,26 @@ class Analyzer
 
         ksort($model);
 
-        $projectInfo = $this->getProjectInfo($this->config->projectRoot);
-        $projectInfo['total_exceptions'] = \count($model);
+        $projectInfo = $this->getProjectInfo($this->config->projectRoot, \count($model));
 
         return new ExceptionCatalog($model, $projectInfo, $meta);
     }
 
-    private function getProjectInfo(string $projectRoot): array
+    private function getProjectInfo(string $projectRoot, int $totalExceptions): ProjectInfo
     {
-        $info = [
-            'name' => 'unknown',
-            'php'  => 'unknown',
-        ];
+        $name = 'unknown';
+        $php = 'unknown';
 
         $composerJsonPath = $projectRoot . DIRECTORY_SEPARATOR . 'composer.json';
         if (file_exists($composerJsonPath)) {
             $composerJson = json_decode((string)file_get_contents($composerJsonPath), true);
-            if (is_array($composerJson)) {
-                $info['name'] = $composerJson['name'] ?? 'unknown';
-                $info['php'] = $composerJson['require']['php'] ?? 'unknown';
+            if (\is_array($composerJson)) {
+                $name = $composerJson['name'] ?? 'unknown';
+                $php = $composerJson['require']['php'] ?? 'unknown';
             }
         }
 
-        return $info;
+        return new ProjectInfo($name, $php, $totalExceptions);
     }
 
     /**

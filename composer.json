@@ -8,6 +8,10 @@
         "nikic/php-parser": "^5.0",
         "nette/neon": "^3.4"
     },
+    "suggest": {
+        "ext-dom": "Required to use the XML output format",
+        "ext-simplexml": "Required to use the XML output format"
+    },
     "require-dev": {
         "phpunit/phpunit": "^13.0",
         "friendsofphp/php-cs-fixer": "^v3",

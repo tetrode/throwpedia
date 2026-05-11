@@ -11,6 +11,7 @@ use Tetrode\Throwpedia\DTO\AnalyzerConfig;
 use Tetrode\Throwpedia\DTO\AttributeField;
 use Tetrode\Throwpedia\DTO\ExceptionCatalog;
 use Tetrode\Throwpedia\DTO\OutputTarget;
+use Tetrode\Throwpedia\DTO\ScanMeta;
 use Tetrode\Throwpedia\DTO\ThrowpediaConfig;
 use Tetrode\Throwpedia\DTO\ValidationIssue;
 use Tetrode\Throwpedia\IO\ConsoleOutput;
@@ -30,6 +31,8 @@ class Throwpedia
      */
     public function run(array $argv): void
     {
+        $this->output->writeln('Throwpedia ' . self::VERSION . "\n");
+
         $configLoader = new ConfigLoader($this->output);
         $configFile = $configLoader->getConfigFile($argv);
         $config = $configLoader->load($configFile, 'throwpedia.neon');
@@ -37,10 +40,10 @@ class Throwpedia
         $files = $this->collectFiles($config->sources, $config->projectRoot);
         $analyzer = $this->initAnalyzer($config);
 
-        $meta = [
-            'version'   => self::VERSION,
-            'scan_time' => date('Y-m-d H:i:s'),
-        ];
+        $meta = new ScanMeta(
+            version: self::VERSION,
+            scan_time: date('Y-m-d H:i:s'),
+        );
 
         $catalog = $analyzer->analyze($files, $meta);
         $this->processResults($catalog, $config->outputs, $config->projectRoot, $config->attributeFields);

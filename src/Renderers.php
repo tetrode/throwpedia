@@ -15,8 +15,15 @@ class Renderers
     public static function toJson(ExceptionCatalog $catalog): string
     {
         $data = [
-            'project' => $catalog->project,
-            'meta'    => $catalog->meta,
+            'project' => [
+                'name'             => $catalog->project->name,
+                'php'              => $catalog->project->php,
+                'total_exceptions' => $catalog->project->total_exceptions,
+            ],
+            'meta' => [
+                'version'   => $catalog->meta->version,
+                'scan_time' => $catalog->meta->scan_time,
+            ],
             'entries' => $catalog->entries,
         ];
 
@@ -28,8 +35,15 @@ class Renderers
     public static function toYaml(ExceptionCatalog $catalog): string
     {
         $data = [
-            'project' => $catalog->project,
-            'meta'    => $catalog->meta,
+            'project' => [
+                'name'             => $catalog->project->name,
+                'php'              => $catalog->project->php,
+                'total_exceptions' => $catalog->project->total_exceptions,
+            ],
+            'meta' => [
+                'version'   => $catalog->meta->version,
+                'scan_time' => $catalog->meta->scan_time,
+            ],
             'entries' => $catalog->entries,
         ];
 
@@ -43,11 +57,11 @@ class Renderers
     {
         $md = "# Business Exceptions Catalog\n\n";
 
-        $md .= \sprintf("**Project:** %s (%s)\n", $catalog->project['name'], $catalog->project['php']);
-        $md .= \sprintf("**Exceptions found:** %d\n\n", $catalog->project['total_exceptions']);
+        $md .= \sprintf("**Project:** %s (%s)\n", $catalog->project->name, $catalog->project->php);
+        $md .= \sprintf("**Exceptions found:** %d\n\n", $catalog->project->total_exceptions);
 
-        $md .= \sprintf("**Throwpedia Version:** %s\n", $catalog->meta['version']);
-        $md .= \sprintf("**Scan time:** %s\n\n", $catalog->meta['scan_time']);
+        $md .= \sprintf("**Throwpedia Version:** %s\n", $catalog->meta->version);
+        $md .= \sprintf("**Scan time:** %s\n\n", $catalog->meta->scan_time);
 
         $grouped = [];
         foreach ($catalog->entries as $entry) {
@@ -97,11 +111,11 @@ class Renderers
         $text = "Business Exceptions Catalog\n";
         $text .= str_repeat('=', 27) . "\n\n";
 
-        $text .= \sprintf("Project: %s (%s)\n", $catalog->project['name'], $catalog->project['php']);
-        $text .= \sprintf("Exceptions found: %d\n\n", $catalog->project['total_exceptions']);
+        $text .= \sprintf("Project: %s (%s)\n", $catalog->project->name, $catalog->project->php);
+        $text .= \sprintf("Exceptions found: %d\n\n", $catalog->project->total_exceptions);
 
-        $text .= \sprintf("Throwpedia Version: %s\n", $catalog->meta['version']);
-        $text .= \sprintf("Scan time: %s\n\n", $catalog->meta['scan_time']);
+        $text .= \sprintf("Throwpedia Version: %s\n", $catalog->meta->version);
+        $text .= \sprintf("Scan time: %s\n\n", $catalog->meta->scan_time);
 
         $grouped = [];
         foreach ($catalog->entries as $entry) {
@@ -173,16 +187,24 @@ class Renderers
      */
     public static function toXml(ExceptionCatalog $catalog, array $attributeFields): string
     {
+        if (!\extension_loaded('simplexml') || !\extension_loaded('dom')) {
+            throw new \RuntimeException(
+                'The "simplexml" and "dom" extensions are required to use the XML output format. ' .
+                'Please install them or use a different output format.'
+            );
+        }
+
+        // Existing XML generation logic follows...
         $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><catalog/>');
 
         $project = $xml->addChild('project');
-        $project->addChild('name', $catalog->project['name']);
-        $project->addChild('php', $catalog->project['php']);
-        $project->addChild('total_exceptions', (string)$catalog->project['total_exceptions']);
+        $project->addChild('name', $catalog->project->name);
+        $project->addChild('php', $catalog->project->php);
+        $project->addChild('total_exceptions', (string)$catalog->project->total_exceptions);
 
         $meta = $xml->addChild('meta');
-        $meta->addChild('version', $catalog->meta['version']);
-        $meta->addChild('scan_time', $catalog->meta['scan_time']);
+        $meta->addChild('version', $catalog->meta->version);
+        $meta->addChild('scan_time', $catalog->meta->scan_time);
 
         $entries = $xml->addChild('entries');
         foreach ($catalog->entries as $entry) {
@@ -201,22 +223,31 @@ class Renderers
             }
         }
 
-        $dom = dom_import_simplexml($xml)->ownerDocument;
+        $domElement = dom_import_simplexml($xml);
+        $dom = $domElement->ownerDocument;
+        if (null === $dom) {
+            throw new \RuntimeException('Failed to get ownerDocument from DOMElement');
+        }
         $dom->formatOutput = true;
 
-        return $dom->saveXML();
+        $xmlString = $dom->saveXML();
+        if (false === $xmlString) {
+            throw new \RuntimeException('Failed to save XML');
+        }
+
+        return $xmlString;
     }
 
     public static function toToml(ExceptionCatalog $catalog): string
     {
         $toml = "[project]\n";
-        $toml .= 'name = ' . self::tomlValue($catalog->project['name']) . "\n";
-        $toml .= 'php = ' . self::tomlValue($catalog->project['php']) . "\n";
-        $toml .= 'total_exceptions = ' . $catalog->project['total_exceptions'] . "\n\n";
+        $toml .= 'name = ' . self::tomlValue($catalog->project->name) . "\n";
+        $toml .= 'php = ' . self::tomlValue($catalog->project->php) . "\n";
+        $toml .= 'total_exceptions = ' . $catalog->project->total_exceptions . "\n\n";
 
         $toml .= "[meta]\n";
-        $toml .= 'version = ' . self::tomlValue($catalog->meta['version']) . "\n";
-        $toml .= 'scan_time = ' . self::tomlValue($catalog->meta['scan_time']) . "\n\n";
+        $toml .= 'version = ' . self::tomlValue($catalog->meta->version) . "\n";
+        $toml .= 'scan_time = ' . self::tomlValue($catalog->meta->scan_time) . "\n\n";
 
         foreach ($catalog->entries as $entry) {
             $toml .= "[[entries]]\n";
@@ -236,10 +267,10 @@ class Renderers
 
     private static function tomlValue(mixed $value): string
     {
-        if (is_int($value) || is_float($value)) {
+        if (\is_int($value) || \is_float($value)) {
             return (string)$value;
         }
-        if (is_bool($value)) {
+        if (\is_bool($value)) {
             return $value ? 'true' : 'false';
         }
 

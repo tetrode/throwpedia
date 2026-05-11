@@ -8,6 +8,8 @@ use PHPUnit\Framework\TestCase;
 use Tetrode\Throwpedia\DTO\AttributeField;
 use Tetrode\Throwpedia\DTO\ExceptionCatalog;
 use Tetrode\Throwpedia\DTO\ExceptionModelEntry;
+use Tetrode\Throwpedia\DTO\ProjectInfo;
+use Tetrode\Throwpedia\DTO\ScanMeta;
 use Tetrode\Throwpedia\Renderers;
 
 class RenderersTest extends TestCase
@@ -47,8 +49,12 @@ class RenderersTest extends TestCase
         $this->assertJson($json);
         $decoded = json_decode($json, true);
         $this->assertArrayHasKey('entries', $decoded);
+        $this->assertArrayHasKey('project', $decoded);
+        $this->assertArrayHasKey('meta', $decoded);
         $this->assertArrayHasKey('ExceptionReason:ERR_001', $decoded['entries']);
         $this->assertEquals('User not found', $decoded['entries']['ExceptionReason:ERR_001']['values']['business']);
+        $this->assertEquals('unknown', $decoded['project']['name']);
+        $this->assertEquals('0.0.0', $decoded['meta']['version']);
     }
 
     public function testToYaml(): void
@@ -103,5 +109,29 @@ class RenderersTest extends TestCase
         $this->assertStringContainsString('Exception: UserNotFoundException', $text);
         $this->assertStringContainsString('- UserRepository::get', $text);
         $this->assertStringContainsString('- UserService::find', $text);
+    }
+
+    public function testWithCustomProjectAndMeta(): void
+    {
+        $project = new ProjectInfo('MyProject', '8.4', 42);
+        $meta = new ScanMeta('1.2.3', '2025-01-01 12:00:00');
+        $catalog = new ExceptionCatalog($this->model, $project, $meta);
+
+        $md = Renderers::toMarkdown($catalog, $this->fields);
+        $this->assertStringContainsString('**Project:** MyProject (8.4)', $md);
+        $this->assertStringContainsString('**Exceptions found:** 42', $md);
+        $this->assertStringContainsString('**Throwpedia Version:** 1.2.3', $md);
+        $this->assertStringContainsString('**Scan time:** 2025-01-01 12:00:00', $md);
+
+        $xml = Renderers::toXml($catalog, $this->fields);
+        $this->assertStringContainsString('<name>MyProject</name>', $xml);
+        $this->assertStringContainsString('<php>8.4</php>', $xml);
+        $this->assertStringContainsString('<total_exceptions>42</total_exceptions>', $xml);
+        $this->assertStringContainsString('<version>1.2.3</version>', $xml);
+
+        $toml = Renderers::toToml($catalog);
+        $this->assertStringContainsString('name = "MyProject"', $toml);
+        $this->assertStringContainsString('total_exceptions = 42', $toml);
+        $this->assertStringContainsString('version = "1.2.3"', $toml);
     }
 }

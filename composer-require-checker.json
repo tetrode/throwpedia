@@ -1,0 +1,16 @@
+{
+  "php-core-extensions": [
+    "Core",
+    "date",
+    "json",
+    "hash",
+    "pcre",
+    "Phar",
+    "Reflection",
+    "SPL",
+    "random",
+    "standard",
+    "dom",
+    "SimpleXML"
+  ]
+}
