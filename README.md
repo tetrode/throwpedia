@@ -1,11 +1,13 @@
-# Throwpedia - Exception Analysis Tool
+# Throwpedia – Business Exception Library
+
+[![Throwpedia](throwpedia.png)](throwpedia.png)
 
 Throwpedia performs static source-code analysis to extract and document business exceptions throughout your PHP
 codebase. It bridges the gap between technical implementation and business logic by cataloging potential failure points.
 
 ## How it works
 
-The tool scans your source directories for PHP files and identifies methods annotated with the `#[ExceptionReason]`
+Throwpedia scans your source directories for PHP files and identifies methods annotated with the `#[ExceptionReason]`
 attribute (or other custom attributes). It correlates these annotations with `throw` statements to build a comprehensive
 catalog of business-relevant exceptions.
 
@@ -52,7 +54,7 @@ composer install tetrode/throwpedia
 
 ## Usage
 
-Run the analysis tool from the project root:
+Run throwpedia from the project root:
 
 ```bash
 vendor/bin/throwpedia

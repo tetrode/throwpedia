@@ -10,4 +10,5 @@
 /phpstan.neon export-ignore
 /phpunit.xml export-ignore
 /README.md export-ignore
+/throwpedia.png export-ignore
 /.github export-ignore

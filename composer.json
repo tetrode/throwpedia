@@ -1,7 +1,7 @@
 {
     "name": "tetrode/throwpedia",
     "bin": ["bin/throwpedia"],
-    "description": "Throwpedia: the static analysis tool for business exceptions",
+    "description": "Throwpedia: the business exception library",
     "type": "project",
     "require": {
         "php": "^8.5",

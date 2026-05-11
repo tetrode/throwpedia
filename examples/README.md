@@ -37,6 +37,6 @@ To run this example:
 ./bin/throwpedia -f examples/03-mixed-flow/throwpedia.neon
 ```
 
-## Running the tool
-You can run the tool from the project root using the provided `bin/throwpedia` script.
+## Running throwpedia
+You can run throwpedia from the project root using the provided `bin/throwpedia` script.
 Make sure you have dependencies installed via `composer install`.
