@@ -1,0 +1,6 @@
+# Business Exceptions Catalog
+
+| Code | Technical Reason | Business Reason | Exception | Thrown From |
+| ---- | ---------------- | --------------- | --------- | ----------- |
+| USER_ALREADY_EXISTS | Duplicate entry for unique email field. | An account with this email already exists. | `App\Exception\UserException::emailTaken` | App\Service\UserService::register |
+| USER_NOT_FOUND | The requested user ID does not exist in the database. | The user you are looking for could not be found. | `App\Exception\UserException::notFound` | App\Service\UserService::getUser |

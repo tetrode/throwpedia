@@ -1,0 +1,46 @@
+{
+    "INVALID_COUPON": {
+        "values": {
+            "code": "INVALID_COUPON",
+            "severity": "low",
+            "ticket": "JIRA-456"
+        },
+        "exception": "App\\Exception\\OrderException::invalidCoupon",
+        "thrown_from": [
+            "App\\Service\\OrderService::applyCoupon"
+        ]
+    },
+    "LOGISTIC_DELAY": {
+        "values": {
+            "code": "LOGISTIC_DELAY",
+            "severity": "medium",
+            "ticket": "JIRA-999"
+        },
+        "exception": "App\\Exception\\OrderException::insufficientStock",
+        "thrown_from": [
+            "App\\Service\\OrderService::checkout"
+        ]
+    },
+    "OUT_OF_STOCK": {
+        "values": {
+            "code": "OUT_OF_STOCK",
+            "severity": "critical",
+            "ticket": "JIRA-123"
+        },
+        "exception": "App\\Exception\\OrderException::insufficientStock",
+        "thrown_from": [
+            "App\\Service\\OrderService::checkout"
+        ]
+    },
+    "SECURITY_ALERT": {
+        "values": {
+            "code": "SECURITY_ALERT",
+            "severity": "high",
+            "ticket": "SEC-789"
+        },
+        "exception": "App\\Exception\\OrderException::invalidCoupon",
+        "thrown_from": [
+            "App\\Service\\OrderService::applyCoupon"
+        ]
+    }
+}

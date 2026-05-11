@@ -1,0 +1,24 @@
+{
+    "USER_ALREADY_EXISTS": {
+        "values": {
+            "code": "USER_ALREADY_EXISTS",
+            "technicalReason": "Duplicate entry for unique email field.",
+            "businessReason": "An account with this email already exists."
+        },
+        "exception": "App\\Exception\\UserException::emailTaken",
+        "thrown_from": [
+            "App\\Service\\UserService::register"
+        ]
+    },
+    "USER_NOT_FOUND": {
+        "values": {
+            "code": "USER_NOT_FOUND",
+            "technicalReason": "The requested user ID does not exist in the database.",
+            "businessReason": "The user you are looking for could not be found."
+        },
+        "exception": "App\\Exception\\UserException::notFound",
+        "thrown_from": [
+            "App\\Service\\UserService::getUser"
+        ]
+    }
+}

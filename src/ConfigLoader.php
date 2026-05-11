@@ -27,7 +27,6 @@ class ConfigLoader
     }
 
     /**
-     * @return ThrowpediaConfig
      */
     #[ExceptionReason('load', 'configuration file not found', 'configuration file is missing')]
     #[ExceptionReason('load', 'configuration file not parsable', 'configuration file is not parsable or empty')]
@@ -77,7 +76,6 @@ class ConfigLoader
     }
 
     /**
-     * @return ThrowpediaConfig
      */
     private function interactiveSetup(string $defaultConfigFile): ThrowpediaConfig
     {

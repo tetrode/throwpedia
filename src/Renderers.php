@@ -7,12 +7,10 @@ namespace Tetrode\Throwpedia;
 use Nette\Neon\Neon;
 use Tetrode\Throwpedia\DTO\AttributeField;
 use Tetrode\Throwpedia\DTO\ExceptionCatalog;
-use Tetrode\Throwpedia\DTO\ExceptionModelEntry;
 
 class Renderers
 {
     /**
-     * @param ExceptionCatalog $catalog
      */
     public static function toJson(ExceptionCatalog $catalog): string
     {
@@ -20,7 +18,6 @@ class Renderers
     }
 
     /**
-     * @param ExceptionCatalog $catalog
      */
     public static function toYaml(ExceptionCatalog $catalog): string
     {
@@ -28,7 +25,6 @@ class Renderers
     }
 
     /**
-     * @param ExceptionCatalog $catalog
      * @param AttributeField[] $fields
      */
     public static function toMarkdown(ExceptionCatalog $catalog, array $fields): string
@@ -42,8 +38,8 @@ class Renderers
         $headers[] = 'Exception';
         $headers[] = 'Thrown From';
 
-        $md .= "| " . implode(' | ', $headers) . " |\n";
-        $md .= "| " . implode(' | ', array_map(fn($h) => str_repeat('-', max(3, strlen($h))), $headers)) . " |\n";
+        $md .= '| ' . implode(' | ', $headers) . " |\n";
+        $md .= '| ' . implode(' | ', array_map(fn ($h) => str_repeat('-', max(3, \strlen($h))), $headers)) . " |\n";
 
         foreach ($catalog->entries as $key => $data) {
             $row = [];
@@ -54,14 +50,13 @@ class Renderers
             $row[] = "`{$data->exception}`";
             $row[] = implode('<br>', $data->thrown_from);
 
-            $md .= "| " . implode(' | ', $row) . " |\n";
+            $md .= '| ' . implode(' | ', $row) . " |\n";
         }
 
         return $md;
     }
 
     /**
-     * @param ExceptionCatalog $catalog
      * @param AttributeField[] $fields
      */
     public static function toText(ExceptionCatalog $catalog, array $fields): string

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use Tetrode\Throwpedia\Attributes\ExceptionReason;
 use App\Exception\PaymentException;
 use InvalidArgumentException;
+use Tetrode\Throwpedia\Attributes\ExceptionReason;
 
 class PaymentService
 {

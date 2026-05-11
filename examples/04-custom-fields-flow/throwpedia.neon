@@ -4,6 +4,8 @@ source:
 
 attributes:
     - CustomReason
+    - AnotherReason
+    - AuditReason
 
 fields:
     code: Error Code

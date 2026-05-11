@@ -1,8 +1,9 @@
 # Throwpedia Examples
 
-This directory contains examples of different "happy flows" for Throwpedia.
+This directory contains examples of different "happy flows" for Throwpedia. 
+The output can be found in the output subdirectories.
 
-## Flow 01: Standard Flow (Recommended)
+## Flow 01: Standard Flow
 Located in `01-standard-flow/`.
 
 This flow demonstrates the recommended way to use Throwpedia:

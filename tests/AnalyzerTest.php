@@ -224,7 +224,7 @@ class AnalyzerTest extends TestCase
         $analyzer->analyze([$this->tempFile]);
 
         $issues = $analyzer->getValidationIssues();
-        $warnings = array_filter($issues, fn($i) => $i->severity === ValidationIssue::SEVERITY_WARNING);
+        $warnings = array_filter($issues, fn ($i) => ValidationIssue::SEVERITY_WARNING === $i->severity);
         $this->assertCount(1, $warnings);
         $warning = reset($warnings);
         $this->assertInstanceOf(ValidationIssue::class, $warning);

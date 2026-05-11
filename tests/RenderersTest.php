@@ -28,8 +28,8 @@ class RenderersTest extends TestCase
         $this->model = [
             'ERR_001' => new ExceptionModelEntry(
                 values: [
-                    'code' => 'ERR_001',
-                    'business' => 'User not found',
+                    'code'      => 'ERR_001',
+                    'business'  => 'User not found',
                     'technical' => 'Database query returned empty result',
                 ],
                 exception: 'UserNotFoundException',
@@ -73,8 +73,8 @@ class RenderersTest extends TestCase
         $model = [
             'ERR_PIPE' => new ExceptionModelEntry(
                 values: [
-                    'code' => 'ERR_PIPE',
-                    'business' => 'Business | with pipe',
+                    'code'      => 'ERR_PIPE',
+                    'business'  => 'Business | with pipe',
                     'technical' => 'Technical | with pipe',
                 ],
                 exception: 'Ex',

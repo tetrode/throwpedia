@@ -1,0 +1,30 @@
+DIRECT_NEW_EXCEPTION:
+	values:
+		code: DIRECT_NEW_EXCEPTION
+		technicalReason: Thrown from App\LegacyService::doSomething
+		businessReason: Direct instantiation of Exception
+
+	exception: Exception
+	thrown_from:
+		- App\LegacyService::doSomething
+
+DIRECT_NEW_RUNTIMEEXCEPTION:
+	values:
+		code: DIRECT_NEW_RUNTIMEEXCEPTION
+		technicalReason: Thrown from App\LegacyService::doSomething
+		businessReason: Direct instantiation of RuntimeException
+
+	exception: RuntimeException
+	thrown_from:
+		- App\LegacyService::doSomething
+
+LEGACY_ERROR:
+	values:
+		code: LEGACY_ERROR
+		technicalReason: Something failed in legacy code
+		businessReason: A system error occurred.
+
+	exception: 'Exception, RuntimeException'
+	thrown_from:
+		- App\LegacyService::doSomething
+

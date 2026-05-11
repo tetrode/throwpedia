@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App;
 
-use Tetrode\Throwpedia\Attributes\ExceptionReason;
 use Exception;
 use RuntimeException;
+use Tetrode\Throwpedia\Attributes\ExceptionReason;
 
 class LegacyService
 {

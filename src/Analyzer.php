@@ -14,7 +14,6 @@ use Tetrode\Throwpedia\DTO\DirectNewThrow;
 use Tetrode\Throwpedia\DTO\ExceptionCatalog;
 use Tetrode\Throwpedia\DTO\ExceptionModelEntry;
 use Tetrode\Throwpedia\DTO\ExtractionResults;
-use Tetrode\Throwpedia\DTO\MethodAnalysisResult;
 use Tetrode\Throwpedia\DTO\ValidationIssue;
 use Tetrode\Throwpedia\IO\OutputInterface;
 
@@ -44,8 +43,6 @@ class Analyzer
 
     /**
      * @param string[] $files
-     *
-     * @return ExceptionCatalog
      */
     public function analyze(array $files): ExceptionCatalog
     {

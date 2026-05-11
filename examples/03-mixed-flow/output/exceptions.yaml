@@ -1,0 +1,30 @@
+DIRECT_NEW_INVALIDARGUMENTEXCEPTION:
+	values:
+		code: DIRECT_NEW_INVALIDARGUMENTEXCEPTION
+		technicalReason: Thrown from App\Service\PaymentService::pay
+		businessReason: Direct instantiation of InvalidArgumentException
+
+	exception: InvalidArgumentException
+	thrown_from:
+		- App\Service\PaymentService::pay
+
+INVALID_AMOUNT:
+	values:
+		code: INVALID_AMOUNT
+		technicalReason: 'Amount is <= 0'
+		businessReason: Please enter a valid amount.
+
+	exception: 'InvalidArgumentException, App\Exception\PaymentException::processingError'
+	thrown_from:
+		- App\Service\PaymentService::pay
+
+PAYMENT_FAILED:
+	values:
+		code: PAYMENT_FAILED
+		technicalReason: Gateway timeout
+		businessReason: We could not process your payment at this time.
+
+	exception: 'InvalidArgumentException, App\Exception\PaymentException::processingError'
+	thrown_from:
+		- App\Service\PaymentService::pay
+

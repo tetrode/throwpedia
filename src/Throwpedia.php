@@ -8,6 +8,7 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 use Tetrode\Throwpedia\DTO\AnalyzerConfig;
+use Tetrode\Throwpedia\DTO\AttributeField;
 use Tetrode\Throwpedia\DTO\ExceptionCatalog;
 use Tetrode\Throwpedia\DTO\OutputTarget;
 use Tetrode\Throwpedia\DTO\ThrowpediaConfig;
@@ -122,6 +123,8 @@ class Throwpedia
 
     /**
      * @param AttributeField[] $fields
+     *
+     * @throws \JsonException
      */
     private function renderModel(ExceptionCatalog $catalog, string $extension, array $fields): ?string
     {
@@ -142,8 +145,8 @@ class Throwpedia
             return;
         }
 
-        $errors = array_filter($issues, fn(ValidationIssue $i) => $i->severity === ValidationIssue::SEVERITY_ERROR);
-        $warnings = array_filter($issues, fn(ValidationIssue $i) => $i->severity === ValidationIssue::SEVERITY_WARNING);
+        $errors = array_filter($issues, fn (ValidationIssue $i) => ValidationIssue::SEVERITY_ERROR === $i->severity);
+        $warnings = array_filter($issues, fn (ValidationIssue $i) => ValidationIssue::SEVERITY_WARNING === $i->severity);
 
         if (!empty($errors)) {
             $this->output->writeln("\nValidation Errors found:");

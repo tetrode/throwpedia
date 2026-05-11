@@ -8,8 +8,8 @@ codebase. It bridges the gap between technical implementation and business logic
 ## How it works
 
 Throwpedia scans your source directories for PHP files and identifies methods annotated with the `#[ExceptionReason]`
-attribute (or other custom attributes). It correlates these annotations with `throw` statements to build a comprehensive
-catalog of business-relevant exceptions.
+attribute (or other custom attributes that you can configure in the confiration file). It correlates these annotations 
+with `throw` statements to build a comprehensive catalog of business-relevant exceptions.
 
 ### Key Features
 

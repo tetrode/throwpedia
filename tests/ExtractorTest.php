@@ -9,8 +9,6 @@ use PhpParser\NodeVisitor\NameResolver;
 use PhpParser\Parser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\TestCase;
-use Tetrode\Throwpedia\DTO\DirectNewThrow;
-use Tetrode\Throwpedia\DTO\ExceptionAttribute;
 use Tetrode\Throwpedia\DTO\MethodAnalysisResult;
 use Tetrode\Throwpedia\Extractor;
 use Tetrode\Throwpedia\IO\NullOutput;

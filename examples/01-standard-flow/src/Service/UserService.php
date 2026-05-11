@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use Tetrode\Throwpedia\Attributes\ExceptionReason;
 use App\Exception\UserException;
+use Tetrode\Throwpedia\Attributes\ExceptionReason;
 
 class UserService
 {

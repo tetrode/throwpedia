@@ -47,6 +47,7 @@ class Extractor extends NodeVisitorAbstract
     /** @var AttributeField[] */
     private array $fields = [];
 
+    /** @noinspection PhpPropertyOnlyWrittenInspection */
     public function __construct(
         /** @phpstan-ignore-next-line this is a stream */
         private readonly OutputInterface $output,
@@ -123,6 +124,7 @@ class Extractor extends NodeVisitorAbstract
 
     private function validateAttributeClass(Class_ $node): void
     {
+        $className = $node->name ? $node->name->toString() : 'anonymous class';
         $constructor = $node->getMethod('__construct');
         if (!$constructor || empty($this->fields)) {
             return;
@@ -133,7 +135,7 @@ class Extractor extends NodeVisitorAbstract
             $param = $params[$index] ?? null;
             if (!$param) {
                 $this->validationIssues[] = new ValidationIssue(
-                    message: \sprintf("Attribute class '%s' is missing parameter '%s' at position %d", $node->name->toString(), $field->name, $index),
+                    message: \sprintf("Attribute class '%s' is missing parameter '%s' at position %d", $className, $field->name, $index),
                     severity: ValidationIssue::SEVERITY_ERROR,
                     file: $this->currentFile,
                     line: $node->getLine()
@@ -141,10 +143,10 @@ class Extractor extends NodeVisitorAbstract
                 continue;
             }
 
-            $paramName = $param->var instanceof Node\Expr\Variable ? (string)$param->var->name : '';
+            $paramName = $param->var instanceof Node\Expr\Variable && \is_string($param->var->name) ? $param->var->name : '';
             if ($paramName !== $field->name) {
                 $this->validationIssues[] = new ValidationIssue(
-                    message: \sprintf("Attribute class '%s' parameter at position %d should be named '%s', found '%s'", $node->name->toString(), $index, $field->name, $paramName),
+                    message: \sprintf("Attribute class '%s' parameter at position %d should be named '%s', found '%s'", $className, $index, $field->name, $paramName),
                     severity: ValidationIssue::SEVERITY_WARNING,
                     file: $this->currentFile,
                     line: $node->getLine()
@@ -233,9 +235,9 @@ class Extractor extends NodeVisitorAbstract
                     } else {
                         if (isset($args[0]) || isset($args['code'])) {
                             $attributes[] = new ExceptionAttribute([
-                                'code' => (string)($args['code'] ?? $args[0] ?? 'UNKNOWN'),
+                                'code'            => (string)($args['code'] ?? $args[0] ?? 'UNKNOWN'),
                                 'technicalReason' => (string)($args['technicalReason'] ?? $args['technical'] ?? $args[1] ?? ''),
-                                'businessReason' => (string)($args['businessReason'] ?? $args['business'] ?? $args[2] ?? ''),
+                                'businessReason'  => (string)($args['businessReason'] ?? $args['business'] ?? $args[2] ?? ''),
                             ]);
                         }
                     }

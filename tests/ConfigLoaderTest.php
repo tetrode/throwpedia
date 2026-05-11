@@ -76,7 +76,7 @@ class ConfigLoaderTest extends TestCase
             $this->assertEquals(['MyException'], $config->attributes);
             $this->assertTrue($config->allowDirectNew);
 
-            $outputPaths = array_map(fn($o) => $o->path, $config->outputs);
+            $outputPaths = array_map(fn ($o) => $o->path, $config->outputs);
             $this->assertContains('./out/exceptions.json', $outputPaths);
 
             $projectRoot = $loader->findProjectRoot();
