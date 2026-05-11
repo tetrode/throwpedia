@@ -1,13 +1,18 @@
-# Configuration for exception analysis tool
+# Configuration for throwpedia
+
+# Sources
 source:
     - src
 
+# Exception Attributes
 attributes:
     - ExceptionReason
 
+# Output files. Remove the ones that you do not need
 outputs:
-    - tool/output/exceptions.json
-    - tool/output/exceptions.yaml
-    - tool/output/exceptions.md
+    - ./output/exceptions.json
+    - ./output/exceptions.yaml
+    - ./output/exceptions.md
 
+# Is throw new Exception() allowed or is only throw MyException::Method() allowed
 allowDirectNew: false

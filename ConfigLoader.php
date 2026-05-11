@@ -90,8 +90,8 @@ class ConfigLoader
         echo 'Exception attribute [ExceptionReason]: ';
         $attr = trim((string)fgets(STDIN)) ?: 'ExceptionReason';
 
-        echo 'Output directory [tool/output]: ';
-        $outDir = trim((string)fgets(STDIN)) ?: 'tool/output';
+        echo 'Output directory [./throwpedia]: ';
+        $outDir = trim((string)fgets(STDIN)) ?: './throwpedia';
 
         echo 'Allow direct new Exceptions? (y/n) [n]: ';
         $allowNewInput = strtolower(trim((string)fgets(STDIN)));
@@ -103,17 +103,22 @@ class ConfigLoader
         }
 
         $neonContent = <<<NEON
-            # Configuration for exception analysis tool
+            # Configuration for throwpedia
 
+            # Sources
             $sourceNeon
+            
+            # Exception Attributes
             attributes:
                 - $attr
 
+            # Output files. Remove the ones that you do not need
             outputs:
                 - $outDir/exceptions.json
                 - $outDir/exceptions.yaml
                 - $outDir/exceptions.md
 
+            # Is throw new Exception() allowed or is only throw MyException::Method() allowed
             allowDirectNew: $allowNew
             NEON;
 
