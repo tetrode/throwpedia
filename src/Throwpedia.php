@@ -7,6 +7,8 @@ namespace Tetrode\Throwpedia;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
+use Tetrode\Throwpedia\DTO\AnalyzerConfig;
+use Tetrode\Throwpedia\DTO\ExceptionModelEntry;
 use Tetrode\Throwpedia\IO\ConsoleOutput;
 use Tetrode\Throwpedia\IO\OutputInterface;
 
@@ -78,20 +80,18 @@ class Throwpedia
      */
     private function initAnalyzer(array $config, string $projectRoot): Analyzer
     {
-        $analyzer = new Analyzer(
+        return new Analyzer(
             $this->output,
-            [
-                'attributes'     => $config['attributes'] ?? ['ExceptionReason'],
-                'allowDirectNew' => $config['allowDirectNew'] ?? false,
-                'projectRoot'    => $projectRoot,
-            ]
+            new AnalyzerConfig(
+                attributes: $config['attributes'] ?? ['ExceptionReason'],
+                allowDirectNew: $config['allowDirectNew'] ?? false,
+                projectRoot: $projectRoot,
+            )
         );
-
-        return $analyzer;
     }
 
     /**
-     * @param array<string, mixed> $model
+     * @param array<string, ExceptionModelEntry> $model
      */
     private function processResults(array $model, mixed $outputs, string $projectRoot): void
     {
@@ -123,7 +123,7 @@ class Throwpedia
     }
 
     /**
-     * @param array<string, mixed> $model
+     * @param array<string, ExceptionModelEntry> $model
      */
     private function renderModel(array $model, string $extension): ?string
     {

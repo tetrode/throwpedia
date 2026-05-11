@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Tetrode\Throwpedia;
 
 use Nette\Neon\Neon;
+use Tetrode\Throwpedia\DTO\ExceptionModelEntry;
 
 class Renderers
 {
     /**
-     * @param array<string, array{code?: string, business: string, technical: string, exception: string, thrown_from: array<string>}> $model
+     * @param array<string, ExceptionModelEntry> $model
      */
     public static function toJson(array $model): string
     {
@@ -17,7 +18,7 @@ class Renderers
     }
 
     /**
-     * @param array<string, array{code?: string, business: string, technical: string, exception: string, thrown_from: array<string>}> $model
+     * @param array<string, ExceptionModelEntry> $model
      */
     public static function toYaml(array $model): string
     {
@@ -25,7 +26,7 @@ class Renderers
     }
 
     /**
-     * @param array<string, array{code?: string, business: string, technical: string, exception: string, thrown_from: array<string>}> $model
+     * @param array<string, ExceptionModelEntry> $model
      */
     public static function toMarkdown(array $model): string
     {
@@ -34,18 +35,18 @@ class Renderers
         $md .= "|------|----------------------|-----------------------|-----------|-------------|\n";
 
         foreach ($model as $key => $data) {
-            $code = $data['code'] ?? $key;
-            $business = str_replace('|', '\\|', (string)$data['business']);
-            $technical = str_replace('|', '\\|', (string)$data['technical']);
-            $thrownFrom = implode('<br>', $data['thrown_from']);
-            $md .= "| $code | $business | $technical | `{$data['exception']}` | $thrownFrom |\n";
+            $code = $data->code ?? $key;
+            $business = str_replace('|', '\\|', (string)$data->business);
+            $technical = str_replace('|', '\\|', (string)$data->technical);
+            $thrownFrom = implode('<br>', $data->thrown_from);
+            $md .= "| $code | $business | $technical | `{$data->exception}` | $thrownFrom |\n";
         }
 
         return $md;
     }
 
     /**
-     * @param array<string, array{code?: string, business: string, technical: string, exception: string, thrown_from: array<string>}> $model
+     * @param array<string, ExceptionModelEntry> $model
      */
     public static function toText(array $model): string
     {
@@ -53,13 +54,13 @@ class Renderers
         $text .= str_repeat('=', 27) . "\n\n";
 
         foreach ($model as $key => $data) {
-            $code = $data['code'] ?? $key;
+            $code = $data->code ?? $key;
             $text .= "[$code]\n";
-            $text .= "  Business:  {$data['business']}\n";
-            $text .= "  Technical: {$data['technical']}\n";
-            $text .= "  Exception: {$data['exception']}\n";
+            $text .= "  Business:  {$data->business}\n";
+            $text .= "  Technical: {$data->technical}\n";
+            $text .= "  Exception: {$data->exception}\n";
             $text .= "  Thrown from:\n";
-            foreach ($data['thrown_from'] as $loc) {
+            foreach ($data->thrown_from as $loc) {
                 $text .= "    - $loc\n";
             }
             $text .= "\n";

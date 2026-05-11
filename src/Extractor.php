@@ -14,6 +14,9 @@ use PhpParser\Node\Stmt\Function_;
 use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\Node\Stmt\Trait_;
 use PhpParser\NodeVisitorAbstract;
+use Tetrode\Throwpedia\DTO\DirectNewThrow;
+use Tetrode\Throwpedia\DTO\ExceptionAttribute;
+use Tetrode\Throwpedia\DTO\MethodAnalysisResult;
 use Tetrode\Throwpedia\IO\OutputInterface;
 
 class Extractor extends NodeVisitorAbstract
@@ -24,10 +27,10 @@ class Extractor extends NodeVisitorAbstract
     private ?Function_ $currentFunction = null;
     private ?string $currentMethodKey = null;
 
-    /** @var array<string, array{file: string, line: int, class: string, method: string, attributes: array<array{code: string, technical: string, business: string}>, throws: array<string>}> */
+    /** @var array<string, MethodAnalysisResult> */
     private array $methods = [];
 
-    /** @var array<array{file: string, line: int, class: string, method: string, exception: string}> */
+    /** @var DirectNewThrow[] */
     private array $directNewThrows = [];
 
     private string $currentFile = '';
@@ -93,14 +96,14 @@ class Extractor extends NodeVisitorAbstract
         $attributes = $this->extractAttributes($node);
 
         $this->currentMethodKey = $this->currentFile . ':' . $node->getLine();
-        $this->methods[$this->currentMethodKey] = [
-            'file'       => $this->currentFile,
-            'line'       => $node->getLine(),
-            'class'      => $fullClassName,
-            'method'     => $methodName,
-            'attributes' => $attributes,
-            'throws'     => [],
-        ];
+        $this->methods[$this->currentMethodKey] = new MethodAnalysisResult(
+            file: $this->currentFile,
+            line: $node->getLine(),
+            class: $fullClassName,
+            method: $methodName,
+            attributes: $attributes,
+            throws: [],
+        );
     }
 
     private function handleFunction(Function_ $node): void
@@ -112,23 +115,22 @@ class Extractor extends NodeVisitorAbstract
         $attributes = $this->extractAttributes($node);
 
         $this->currentMethodKey = $this->currentFile . ':' . $node->getLine();
-        $this->methods[$this->currentMethodKey] = [
-            'file'       => $this->currentFile,
-            'line'       => $node->getLine(),
-            'class'      => $fullNamespace,
-            'method'     => $functionName,
-            'attributes' => $attributes,
-            'throws'     => [],
-        ];
+        $this->methods[$this->currentMethodKey] = new MethodAnalysisResult(
+            file: $this->currentFile,
+            line: $node->getLine(),
+            class: $fullNamespace,
+            method: $functionName,
+            attributes: $attributes,
+            throws: [],
+        );
     }
 
     /**
-     * @param Node\FunctionLike $node
-     *
-     * @return array<array{code: string, technical: string, business: string}>
+     * @return ExceptionAttribute[]
      */
     private function extractAttributes(Node\FunctionLike $node): array
     {
+        /** @var ExceptionAttribute[] $attributes */
         $attributes = [];
         foreach ($node->getAttrGroups() as $attrGroup) {
             foreach ($attrGroup->attrs as $attr) {
@@ -157,11 +159,11 @@ class Extractor extends NodeVisitorAbstract
                     }
 
                     if (isset($args[0]) || isset($args['code'])) {
-                        $attributes[] = [
-                            'code'      => (string)($args['code'] ?? $args[0] ?? 'UNKNOWN'),
-                            'technical' => (string)($args['technicalReason'] ?? $args['technical'] ?? $args[1] ?? ''),
-                            'business'  => (string)($args['businessReason'] ?? $args['business'] ?? $args[2] ?? ''),
-                        ];
+                        $attributes[] = new ExceptionAttribute(
+                            code: (string)($args['code'] ?? $args[0] ?? 'UNKNOWN'),
+                            technical: (string)($args['technicalReason'] ?? $args['technical'] ?? $args[1] ?? ''),
+                            business: (string)($args['businessReason'] ?? $args['business'] ?? $args[2] ?? ''),
+                        );
                     }
                 }
             }
@@ -182,7 +184,8 @@ class Extractor extends NodeVisitorAbstract
                 $methodName = $method->toString();
 
                 if ($this->currentMethodKey && isset($this->methods[$this->currentMethodKey])) {
-                    $this->methods[$this->currentMethodKey]['throws'][] = $className . '::' . $methodName;
+                    $method = $this->methods[$this->currentMethodKey];
+                    $method->throws[] = $className . '::' . $methodName;
                 }
             }
         } elseif ($node->expr instanceof New_) {
@@ -190,16 +193,17 @@ class Extractor extends NodeVisitorAbstract
             if ($class instanceof Name) {
                 $className = $class->toString();
                 if ($this->currentMethodKey && isset($this->methods[$this->currentMethodKey])) {
-                    $this->methods[$this->currentMethodKey]['throws'][] = $className;
+                    $method = $this->methods[$this->currentMethodKey];
+                    $method->throws[] = $className;
                 }
 
-                $this->directNewThrows[] = [
-                    'file'      => $this->currentFile,
-                    'line'      => $node->getLine(),
-                    'class'     => ($this->currentNamespace ? $this->currentNamespace . '\\' : '') . ($this->currentClass ?? ''),
-                    'method'    => ($this->currentMethod ? $this->currentMethod->name->toString() : ($this->currentFunction ? $this->currentFunction->name->toString() : 'unknown')),
-                    'exception' => $className,
-                ];
+                $this->directNewThrows[] = new DirectNewThrow(
+                    file: $this->currentFile,
+                    line: $node->getLine(),
+                    class: ($this->currentNamespace ? $this->currentNamespace . '\\' : '') . ($this->currentClass ?? ''),
+                    method: ($this->currentMethod ? $this->currentMethod->name->toString() : ($this->currentFunction ? $this->currentFunction->name->toString() : 'unknown')),
+                    exception: $className,
+                );
             }
         }
     }
@@ -221,7 +225,7 @@ class Extractor extends NodeVisitorAbstract
     }
 
     /**
-     * @return array<string, array{file: string, line: int, class: string, method: string, attributes: array<array{code: string, technical: string, business: string}>, throws: array<string>}>
+     * @return array<string, MethodAnalysisResult>
      */
     public function getResults(): array
     {
@@ -229,7 +233,7 @@ class Extractor extends NodeVisitorAbstract
     }
 
     /**
-     * @return array<array{file: string, line: int, class: string, method: string, exception: string}>
+     * @return DirectNewThrow[]
      */
     public function getDirectNewThrows(): array
     {

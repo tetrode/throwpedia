@@ -9,6 +9,9 @@ use PhpParser\NodeVisitor\NameResolver;
 use PhpParser\Parser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\TestCase;
+use Tetrode\Throwpedia\DTO\DirectNewThrow;
+use Tetrode\Throwpedia\DTO\ExceptionAttribute;
+use Tetrode\Throwpedia\DTO\MethodAnalysisResult;
 use Tetrode\Throwpedia\Extractor;
 use Tetrode\Throwpedia\IO\NullOutput;
 
@@ -24,7 +27,7 @@ class ExtractorTest extends TestCase
     }
 
     /**
-     * @return array<string, array{file: string, line: int, class: string, method: string, attributes: array<array{code: string, technical: string, business: string}>, throws: array<string>}>
+     * @return array<string, MethodAnalysisResult>
      */
     private function analyzeCode(string $code): array
     {
@@ -60,13 +63,13 @@ class ExtractorTest extends TestCase
         $this->assertIsString($key);
         $data = $results[$key];
 
-        $this->assertEquals('App\MyClass', $data['class']);
-        $this->assertEquals('doSomething', $data['method']);
-        $this->assertCount(1, $data['attributes']);
-        $this->assertEquals('ERR_001', $data['attributes'][0]['code']);
-        $this->assertEquals('Tech', $data['attributes'][0]['technical']);
-        $this->assertEquals('Biz', $data['attributes'][0]['business']);
-        $this->assertEquals(['App\MyException::invalidInput'], $data['throws']);
+        $this->assertEquals('App\MyClass', $data->class);
+        $this->assertEquals('doSomething', $data->method);
+        $this->assertCount(1, $data->attributes);
+        $this->assertEquals('ERR_001', $data->attributes[0]->code);
+        $this->assertEquals('Tech', $data->attributes[0]->technical);
+        $this->assertEquals('Biz', $data->attributes[0]->business);
+        $this->assertEquals(['App\MyException::invalidInput'], $data->throws);
     }
 
     public function testExtractsDirectNewThrows(): void
@@ -84,9 +87,9 @@ class ExtractorTest extends TestCase
 
         $directNew = $this->extractor->getDirectNewThrows();
         $this->assertCount(1, $directNew);
-        $this->assertEquals('Exception', $directNew[0]['exception']);
-        $this->assertEquals('MyClass', $directNew[0]['class']);
-        $this->assertEquals('doSomething', $directNew[0]['method']);
+        $this->assertEquals('Exception', $directNew[0]->exception);
+        $this->assertEquals('MyClass', $directNew[0]->class);
+        $this->assertEquals('doSomething', $directNew[0]->method);
     }
 
     public function testHandlePositionalArgumentsInAttribute(): void
@@ -105,10 +108,10 @@ class ExtractorTest extends TestCase
 
         $key = array_key_first($results);
         $this->assertIsString($key);
-        $attr = $results[$key]['attributes'][0];
-        $this->assertEquals('ERR_POS', $attr['code']);
-        $this->assertEquals('Tech Pos', $attr['technical']);
-        $this->assertEquals('Biz Pos', $attr['business']);
+        $attr = $results[$key]->attributes[0];
+        $this->assertEquals('ERR_POS', $attr->code);
+        $this->assertEquals('Tech Pos', $attr->technical);
+        $this->assertEquals('Biz Pos', $attr->business);
     }
 
     public function testHandlesMultipleFilesCorrectly(): void
@@ -141,8 +144,8 @@ class ExtractorTest extends TestCase
         $this->assertStringStartsWith('file1.php:', $keys[0]);
         $this->assertStringStartsWith('file2.php:', $keys[1]);
 
-        $this->assertEquals('App\Class1', $results[$keys[0]]['class']);
-        $this->assertEquals('App\Class2', $results[$keys[1]]['class']);
+        $this->assertEquals('App\Class1', $results[$keys[0]]->class);
+        $this->assertEquals('App\Class2', $results[$keys[1]]->class);
     }
 
     public function testExtractsMethodWithMultipleAttributes(): void
@@ -163,11 +166,11 @@ class ExtractorTest extends TestCase
         $this->assertCount(1, $results);
         $key = array_key_first($results);
         $this->assertIsString($key);
-        $attrs = $results[$key]['attributes'];
+        $attrs = $results[$key]->attributes;
 
         $this->assertCount(2, $attrs);
-        $this->assertEquals('E1', $attrs[0]['code']);
-        $this->assertEquals('E2', $attrs[1]['code']);
+        $this->assertEquals('E1', $attrs[0]->code);
+        $this->assertEquals('E2', $attrs[1]->code);
     }
 
     public function testExtractsFromTrait(): void
@@ -186,9 +189,9 @@ class ExtractorTest extends TestCase
         $results = $this->analyzeCode($code);
         $this->assertCount(1, $results);
         $data = reset($results);
-        $this->assertIsArray($data);
-        $this->assertEquals('App\MyTrait', $data['class']);
-        $this->assertEquals('traitMethod', $data['method']);
+        $this->assertInstanceOf(MethodAnalysisResult::class, $data);
+        $this->assertEquals('App\MyTrait', $data->class);
+        $this->assertEquals('traitMethod', $data->method);
     }
 
     public function testExtractsFromGlobalFunction(): void
@@ -204,9 +207,9 @@ class ExtractorTest extends TestCase
         $results = $this->analyzeCode($code);
         $this->assertCount(1, $results);
         $data = reset($results);
-        $this->assertIsArray($data);
-        $this->assertEquals('', $data['class']);
-        $this->assertEquals('myGlobalFunction', $data['method']);
+        $this->assertInstanceOf(MethodAnalysisResult::class, $data);
+        $this->assertEquals('', $data->class);
+        $this->assertEquals('myGlobalFunction', $data->method);
     }
 
     public function testExtractsFromExpressionThrow(): void
@@ -223,6 +226,6 @@ class ExtractorTest extends TestCase
         $this->analyzeCode($code);
         $directNew = $this->extractor->getDirectNewThrows();
         $this->assertCount(1, $directNew);
-        $this->assertEquals('RuntimeException', $directNew[0]['exception']);
+        $this->assertEquals('RuntimeException', $directNew[0]->exception);
     }
 }

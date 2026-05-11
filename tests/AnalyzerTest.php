@@ -6,6 +6,7 @@ namespace Tetrode\Throwpedia\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Tetrode\Throwpedia\Analyzer;
+use Tetrode\Throwpedia\DTO\AnalyzerConfig;
 use Tetrode\Throwpedia\IO\NullOutput;
 
 class AnalyzerTest extends TestCase
@@ -44,10 +45,10 @@ class AnalyzerTest extends TestCase
         $model = $analyzer->analyze([$this->tempFile]);
 
         $this->assertArrayHasKey('ERR_1', $model);
-        $this->assertEquals('Biz 1', $model['ERR_1']['business']);
-        $this->assertEquals('Tech 1', $model['ERR_1']['technical']);
-        $this->assertEquals('App\MyException::error', $model['ERR_1']['exception']);
-        $this->assertEquals(['App\MyClass::method1'], $model['ERR_1']['thrown_from']);
+        $this->assertEquals('Biz 1', $model['ERR_1']->business);
+        $this->assertEquals('Tech 1', $model['ERR_1']->technical);
+        $this->assertEquals('App\MyException::error', $model['ERR_1']->exception);
+        $this->assertEquals(['App\MyClass::method1'], $model['ERR_1']->thrown_from);
     }
 
     public function testValidationErrorsForMissingAttribute(): void
@@ -82,7 +83,7 @@ class AnalyzerTest extends TestCase
             PHP;
         file_put_contents($this->tempFile, $code);
 
-        $analyzer = new Analyzer($this->output, ['allowDirectNew' => false]);
+        $analyzer = new Analyzer($this->output, new AnalyzerConfig(allowDirectNew: false));
         $analyzer->analyze([$this->tempFile]);
         $errors = $analyzer->getValidationErrors();
 
@@ -103,11 +104,11 @@ class AnalyzerTest extends TestCase
             PHP;
         file_put_contents($this->tempFile, $code);
 
-        $analyzer = new Analyzer($this->output, ['allowDirectNew' => true]);
+        $analyzer = new Analyzer($this->output, new AnalyzerConfig(allowDirectNew: true));
         $model = $analyzer->analyze([$this->tempFile]);
 
         $this->assertArrayHasKey('DIRECT_NEW_EXCEPTION', $model);
-        $this->assertEquals('Exception', $model['DIRECT_NEW_EXCEPTION']['exception']);
+        $this->assertEquals('Exception', $model['DIRECT_NEW_EXCEPTION']->exception);
     }
 
     public function testAnalyzeHandlesParseError(): void
@@ -140,7 +141,7 @@ class AnalyzerTest extends TestCase
             }
             PHP;
         file_put_contents($this->tempFile, $code);
-        $analyzer = new Analyzer($this->output, ['allowDirectNew' => true]);
+        $analyzer = new Analyzer($this->output, new AnalyzerConfig(allowDirectNew: true));
         $model = $analyzer->analyze([$this->tempFile]);
 
         $this->assertArrayHasKey('DIRECT_NEW_EXCEPTION', $model);
@@ -168,11 +169,11 @@ class AnalyzerTest extends TestCase
         $this->assertArrayHasKey('ERR_A', $model);
         $this->assertArrayHasKey('ERR_B', $model);
 
-        $this->assertEquals('Biz A', $model['ERR_A']['business']);
-        $this->assertEquals(['MyClass::methodWithTwoAttributes'], $model['ERR_A']['thrown_from']);
+        $this->assertEquals('Biz A', $model['ERR_A']->business);
+        $this->assertEquals(['MyClass::methodWithTwoAttributes'], $model['ERR_A']->thrown_from);
 
-        $this->assertEquals('Biz B', $model['ERR_B']['business']);
-        $this->assertEquals(['MyClass::methodWithTwoAttributes'], $model['ERR_B']['thrown_from']);
+        $this->assertEquals('Biz B', $model['ERR_B']->business);
+        $this->assertEquals(['MyClass::methodWithTwoAttributes'], $model['ERR_B']->thrown_from);
     }
 
     public function testAnalyzeWithDuplicateAttributeCodesOnSameMethod(): void
@@ -196,9 +197,9 @@ class AnalyzerTest extends TestCase
         $this->assertCount(2, $model);
         $this->assertArrayHasKey('DUP', $model);
         $this->assertArrayHasKey('DUP_1', $model);
-        $this->assertEquals('Biz 1', $model['DUP']['business']);
-        $this->assertEquals('Biz 2', $model['DUP_1']['business']);
-        $this->assertEquals(['MyClass::methodWithDuplicateCodes'], $model['DUP']['thrown_from']);
+        $this->assertEquals('Biz 1', $model['DUP']->business);
+        $this->assertEquals('Biz 2', $model['DUP_1']->business);
+        $this->assertEquals(['MyClass::methodWithDuplicateCodes'], $model['DUP']->thrown_from);
     }
 
     public function testAnalyzeTriggersWarningForDuplicateCodesWithDifferentReasons(): void
@@ -241,9 +242,9 @@ class AnalyzerTest extends TestCase
 
         $this->assertCount(1, $model);
         $this->assertArrayHasKey('SHARED', $model);
-        $this->assertCount(2, $model['SHARED']['thrown_from']);
-        $this->assertContains('ClassA::methodA', $model['SHARED']['thrown_from']);
-        $this->assertContains('ClassB::methodB', $model['SHARED']['thrown_from']);
+        $this->assertCount(2, $model['SHARED']->thrown_from);
+        $this->assertContains('ClassA::methodA', $model['SHARED']->thrown_from);
+        $this->assertContains('ClassB::methodB', $model['SHARED']->thrown_from);
     }
 
     public function testAnalyzeWithMultipleAttributesAndMultipleThrows(): void
@@ -268,7 +269,7 @@ class AnalyzerTest extends TestCase
 
         $this->assertCount(2, $model);
         // It should now list all exceptions found in the method for all its attributes
-        $this->assertEquals('Exc1::error, Exc2::error', $model['E1']['exception']);
-        $this->assertEquals('Exc1::error, Exc2::error', $model['E2']['exception']);
+        $this->assertEquals('Exc1::error, Exc2::error', $model['E1']->exception);
+        $this->assertEquals('Exc1::error, Exc2::error', $model['E2']->exception);
     }
 }

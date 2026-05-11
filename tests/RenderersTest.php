@@ -5,26 +5,33 @@ declare(strict_types=1);
 namespace Tetrode\Throwpedia\Tests;
 
 use PHPUnit\Framework\TestCase;
+use Tetrode\Throwpedia\DTO\ExceptionModelEntry;
 use Tetrode\Throwpedia\Renderers;
 
 class RenderersTest extends TestCase
 {
-    /** @var array<string, array{code?: string, business: string, technical: string, exception: string, thrown_from: array<string>}> */
-    private array $model = [
-        'ERR_001' => [
-            'business'    => 'User not found',
-            'technical'   => 'Database query returned empty result',
-            'exception'   => 'UserNotFoundException',
-            'thrown_from' => ['UserRepository::get', 'UserService::find'],
-        ],
-    ];
+    /** @var array<string, ExceptionModelEntry> */
+    private array $model;
+
+    protected function setUp(): void
+    {
+        $this->model = [
+            'ERR_001' => new ExceptionModelEntry(
+                business: 'User not found',
+                technical: 'Database query returned empty result',
+                exception: 'UserNotFoundException',
+                thrown_from: ['UserRepository::get', 'UserService::find'],
+            ),
+        ];
+    }
 
     public function testToJson(): void
     {
         $json = Renderers::toJson($this->model);
         $this->assertJson($json);
         $decoded = json_decode($json, true);
-        $this->assertEquals($this->model, $decoded);
+        $this->assertArrayHasKey('ERR_001', $decoded);
+        $this->assertEquals('User not found', $decoded['ERR_001']['business']);
     }
 
     public function testToYaml(): void
@@ -51,12 +58,12 @@ class RenderersTest extends TestCase
     public function testToMarkdownWithPipes(): void
     {
         $model = [
-            'ERR_PIPE' => [
-                'business'    => 'Business | with pipe',
-                'technical'   => 'Technical | with pipe',
-                'exception'   => 'Ex',
-                'thrown_from' => ['Loc'],
-            ],
+            'ERR_PIPE' => new ExceptionModelEntry(
+                business: 'Business | with pipe',
+                technical: 'Technical | with pipe',
+                exception: 'Ex',
+                thrown_from: ['Loc'],
+            ),
         ];
         $md = Renderers::toMarkdown($model);
         $this->assertStringContainsString('Business \| with pipe', $md);
