@@ -86,8 +86,9 @@ class ConfigLoader
         $srcDirInput = trim((string)fgets($this->inputStream)) ?: 'src';
         $srcDirs = array_map('trim', explode(',', $srcDirInput));
 
-        $this->output->write('Exception attribute [ExceptionReason]: ');
-        $attr = trim((string)fgets($this->inputStream)) ?: 'ExceptionReason';
+        $this->output->write('Exception attributes (comma separated) [ExceptionReason]: ');
+        $attrInput = trim((string)fgets($this->inputStream)) ?: 'ExceptionReason';
+        $attrs = array_map('trim', explode(',', $attrInput));
 
         $this->output->write('Output directory [./throwpedia]: ');
         $outDir = trim((string)fgets($this->inputStream)) ?: './throwpedia';
@@ -102,6 +103,11 @@ class ConfigLoader
             $sourceNeon .= "    - $dir\n";
         }
 
+        $attrNeon = "attributes:\n";
+        foreach ($attrs as $attr) {
+            $attrNeon .= "    - $attr\n";
+        }
+
         $neonContent = <<<NEON
             # Configuration for throwpedia
 
@@ -109,8 +115,15 @@ class ConfigLoader
             $sourceNeon
             
             # Exception Attributes
-            attributes:
-                - $attr
+            # You can provide a simple list of attribute names OR a map with specific fields.
+            $attrNeon
+
+            # Default fields for attributes (optional)
+            # These are used by default for all attributes listed above.
+            fields:
+                code: Code
+                technicalReason: Technical Reason
+                businessReason: Business Reason
 
             # Output files. Remove the ones that you do not need
             outputs:
@@ -118,8 +131,11 @@ class ConfigLoader
                 - $outDir/exceptions.yaml
                 - $outDir/exceptions.md
 
-            # Is throw new Exception() allowed or is only throw MyException::Method() allowed
+            # Is throw MyException::Method() required? (false means direct 'new' is not allowed)
             allowDirectNew: $allowNewStr
+
+            # Suppress duplicate code warnings (optional)
+            suppressDuplicateCodeWarning: false
             NEON;
 
         file_put_contents($defaultConfigFile, $neonContent);
@@ -140,25 +156,42 @@ class ConfigLoader
             $outputs[] = new OutputTarget((string)$outputPath, $extension);
         }
 
-        $fields = [];
+        $defaultFields = [];
         if (isset($config['fields'])) {
             foreach ((array)$config['fields'] as $name => $label) {
-                $fields[] = new DTO\AttributeField((string)$name, (string)$label, 'code' === $name);
+                $defaultFields[] = new DTO\AttributeField((string)$name, (string)$label, 'code' === $name);
             }
         } else {
-            $fields = [
+            $defaultFields = [
                 new DTO\AttributeField('code', 'Code', true),
                 new DTO\AttributeField('technicalReason', 'Technical Reason'),
                 new DTO\AttributeField('businessReason', 'Business Reason'),
             ];
         }
 
+        $attributeFields = [];
+        $attributesConfig = (array)($config['attributes'] ?? ['ExceptionReason']);
+
+        foreach ($attributesConfig as $key => $val) {
+            if (\is_string($key)) {
+                $attrName = $key;
+                $fields = [];
+                foreach ((array)$val as $fName => $fLabel) {
+                    $fields[] = new DTO\AttributeField((string)$fName, (string)$fLabel, 'code' === $fName);
+                }
+                $attributeFields[$attrName] = $fields;
+            } else {
+                $attrName = (string)$val;
+                $attributeFields[$attrName] = $defaultFields;
+            }
+        }
+
         return new ThrowpediaConfig(
             sources: (array)($config['source'] ?? ['src']),
-            attributes: (array)($config['attributes'] ?? ['ExceptionReason']),
-            fields: $fields,
+            attributeFields: $attributeFields,
             outputs: $outputs,
             allowDirectNew: (bool)($config['allowDirectNew'] ?? false),
+            suppressDuplicateCodeWarning: (bool)($config['suppressDuplicateCodeWarning'] ?? false),
             projectRoot: $projectRoot
         );
     }

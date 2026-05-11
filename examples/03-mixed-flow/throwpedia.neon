@@ -16,3 +16,6 @@ outputs:
     - examples/03-mixed-flow/output/exceptions.md
 
 allowDirectNew: true
+
+# Suppress duplicate code warnings (optional)
+suppressDuplicateCodeWarning: false

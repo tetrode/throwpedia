@@ -1,5 +1,28 @@
 {
-    "INVALID_COUPON": {
+    "AnotherReason:LOGISTIC_DELAY": {
+        "attributeName": "AnotherReason",
+        "values": {
+            "code": "LOGISTIC_DELAY",
+            "note": "Expected delay 2 days"
+        },
+        "exception": "App\\Exception\\OrderException::insufficientStock",
+        "thrown_from": [
+            "App\\Service\\OrderService::checkout"
+        ]
+    },
+    "AuditReason:SECURITY_ALERT": {
+        "attributeName": "AuditReason",
+        "values": {
+            "code": "SECURITY_ALERT",
+            "action": "BLOCK_USER"
+        },
+        "exception": "App\\Exception\\OrderException::invalidCoupon",
+        "thrown_from": [
+            "App\\Service\\OrderService::applyCoupon"
+        ]
+    },
+    "CustomReason:INVALID_COUPON": {
+        "attributeName": "CustomReason",
         "values": {
             "code": "INVALID_COUPON",
             "severity": "low",
@@ -10,18 +33,8 @@
             "App\\Service\\OrderService::applyCoupon"
         ]
     },
-    "LOGISTIC_DELAY": {
-        "values": {
-            "code": "LOGISTIC_DELAY",
-            "severity": "medium",
-            "ticket": "JIRA-999"
-        },
-        "exception": "App\\Exception\\OrderException::insufficientStock",
-        "thrown_from": [
-            "App\\Service\\OrderService::checkout"
-        ]
-    },
-    "OUT_OF_STOCK": {
+    "CustomReason:OUT_OF_STOCK": {
+        "attributeName": "CustomReason",
         "values": {
             "code": "OUT_OF_STOCK",
             "severity": "critical",
@@ -30,17 +43,6 @@
         "exception": "App\\Exception\\OrderException::insufficientStock",
         "thrown_from": [
             "App\\Service\\OrderService::checkout"
-        ]
-    },
-    "SECURITY_ALERT": {
-        "values": {
-            "code": "SECURITY_ALERT",
-            "severity": "high",
-            "ticket": "SEC-789"
-        },
-        "exception": "App\\Exception\\OrderException::invalidCoupon",
-        "thrown_from": [
-            "App\\Service\\OrderService::applyCoupon"
         ]
     }
 }

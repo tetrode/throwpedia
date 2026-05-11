@@ -12,6 +12,15 @@ fields:
 
 outputs:
     - examples/01-standard-flow/output/exceptions.json
+    - examples/01-standard-flow/output/exceptions.yaml
     - examples/01-standard-flow/output/exceptions.md
+    - examples/01-standard-flow/output/exceptions.csv
+    - examples/01-standard-flow/output/exceptions.tsv
+    - examples/01-standard-flow/output/exceptions.psv
+    - examples/01-standard-flow/output/exceptions.xml
+    - examples/01-standard-flow/output/exceptions.toml
 
 allowDirectNew: false
+
+# Suppress duplicate code warnings (optional)
+suppressDuplicateCodeWarning: false

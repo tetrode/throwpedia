@@ -42,10 +42,10 @@ To run this example:
 Located in `04-custom-fields-flow/`.
 
 This flow demonstrates the power of the new configurable architecture:
-- Custom attribute `#[CustomReason]` instead of the default `#[ExceptionReason]`.
-- Custom fields (`code`, `severity`, `ticket`) defined in `throwpedia.neon`.
-- Automatic validation of the custom attribute class.
-- Dynamic generation of documentation with custom labels.
+- Multiple custom attributes (`#[CustomReason]`, `#[AnotherReason]`, `#[AuditReason]`) with **different sets of fields** for each.
+- Per-attribute field definitions in `throwpedia.neon`.
+- Automatic validation of each attribute class against its specific schema.
+- Dynamic generation of documentation grouped by attribute with correct columns for each.
 
 To run this example:
 ```bash

@@ -8,16 +8,15 @@ readonly class ThrowpediaConfig
 {
     /**
      * @param string[] $sources
-     * @param string[] $attributes
-     * @param AttributeField[] $fields
+     * @param array<string, AttributeField[]> $attributeFields
      * @param OutputTarget[] $outputs
      */
     public function __construct(
         public array $sources,
-        public array $attributes,
-        public array $fields,
+        public array $attributeFields,
         public array $outputs,
         public bool $allowDirectNew,
+        public bool $suppressDuplicateCodeWarning = false,
         public string $projectRoot = '',
     ) {
     }

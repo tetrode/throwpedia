@@ -9,6 +9,7 @@ use PhpParser\NodeVisitor\NameResolver;
 use PhpParser\Parser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\TestCase;
+use Tetrode\Throwpedia\DTO\AttributeField;
 use Tetrode\Throwpedia\DTO\MethodAnalysisResult;
 use Tetrode\Throwpedia\Extractor;
 use Tetrode\Throwpedia\IO\NullOutput;
@@ -21,6 +22,13 @@ class ExtractorTest extends TestCase
     protected function setUp(): void
     {
         $this->extractor = new Extractor(new NullOutput());
+        $this->extractor->setAttributeFields([
+            'ExceptionReason' => [
+                new AttributeField('code', 'Code', true),
+                new AttributeField('technicalReason', 'Technical Reason'),
+                new AttributeField('businessReason', 'Business Reason'),
+            ],
+        ]);
         $this->parser = new ParserFactory()->createForNewestSupportedVersion();
     }
 
@@ -47,7 +55,7 @@ class ExtractorTest extends TestCase
             <?php
             namespace App;
             class MyClass {
-                #[ExceptionReason(code: 'ERR_001', technical: 'Tech', business: 'Biz')]
+                #[ExceptionReason(code: 'ERR_001', technicalReason: 'Tech', businessReason: 'Biz')]
                 public function doSomething() {
                     throw MyException::invalidInput();
                 }
@@ -118,7 +126,7 @@ class ExtractorTest extends TestCase
             <?php
             namespace App;
             class Class1 {
-                #[ExceptionReason(code: 'E1', technical: 'T1', business: 'B1')]
+                #[ExceptionReason(code: 'E1', technicalReason: 'T1', businessReason: 'B1')]
                 public function m1() { throw E::e(); }
             }
             PHP;
@@ -126,7 +134,7 @@ class ExtractorTest extends TestCase
             <?php
             namespace App;
             class Class2 {
-                #[ExceptionReason(code: 'E2', technical: 'T2', business: 'B2')]
+                #[ExceptionReason(code: 'E2', technicalReason: 'T2', businessReason: 'B2')]
                 public function m2() { throw E::e(); }
             }
             PHP;
@@ -151,8 +159,8 @@ class ExtractorTest extends TestCase
         $code = <<<'PHP'
             <?php
             class MyClass {
-                #[ExceptionReason(code: 'E1', technical: 'T1', business: 'B1')]
-                #[ExceptionReason(code: 'E2', technical: 'T2', business: 'B2')]
+                #[ExceptionReason(code: 'E1', technicalReason: 'T1', businessReason: 'B1')]
+                #[ExceptionReason(code: 'E2', technicalReason: 'T2', businessReason: 'B2')]
                 public function multiAttrMethod() {
                     throw MyException::error();
                 }
@@ -176,7 +184,7 @@ class ExtractorTest extends TestCase
             <?php
             namespace App;
             trait MyTrait {
-                #[ExceptionReason(code: 'TRAIT_ERR', technical: 'T', business: 'B')]
+                #[ExceptionReason(code: 'TRAIT_ERR', technicalReason: 'T', businessReason: 'B')]
                 public function traitMethod() {
                     throw MyEx::fail();
                 }
@@ -195,7 +203,7 @@ class ExtractorTest extends TestCase
     {
         $code = <<<'PHP'
             <?php
-            #[ExceptionReason(code: 'FUNC_ERR', technical: 'T', business: 'B')]
+            #[ExceptionReason(code: 'FUNC_ERR', technicalReason: 'T', businessReason: 'B')]
             function myGlobalFunction() {
                 throw MyEx::fail();
             }

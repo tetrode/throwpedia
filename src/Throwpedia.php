@@ -18,6 +18,8 @@ use Tetrode\Throwpedia\IO\OutputInterface;
 
 class Throwpedia
 {
+    public const VERSION = '0.1.0';
+
     public function __construct(
         private readonly OutputInterface $output = new ConsoleOutput(),
     ) {
@@ -35,12 +37,17 @@ class Throwpedia
         $files = $this->collectFiles($config->sources, $config->projectRoot);
         $analyzer = $this->initAnalyzer($config);
 
-        $catalog = $analyzer->analyze($files);
-        $this->processResults($catalog, $config->outputs, $config->projectRoot, $config->fields);
+        $meta = [
+            'version'   => self::VERSION,
+            'scan_time' => date('Y-m-d H:i:s'),
+        ];
+
+        $catalog = $analyzer->analyze($files, $meta);
+        $this->processResults($catalog, $config->outputs, $config->projectRoot, $config->attributeFields);
 
         $this->output->writeln('Analysis complete.');
 
-        $this->displayValidationIssues($analyzer);
+        $this->displayValidationIssues($analyzer, $config->projectRoot);
     }
 
     /**
@@ -83,9 +90,9 @@ class Throwpedia
         return new Analyzer(
             $this->output,
             new AnalyzerConfig(
-                attributes: $config->attributes,
-                fields: $config->fields,
+                attributeFields: $config->attributeFields,
                 allowDirectNew: $config->allowDirectNew,
+                suppressDuplicateCodeWarning: $config->suppressDuplicateCodeWarning,
                 projectRoot: $config->projectRoot,
             )
         );
@@ -93,12 +100,12 @@ class Throwpedia
 
     /**
      * @param OutputTarget[] $outputs
-     * @param DTO\AttributeField[] $fields
+     * @param array<string, AttributeField[]> $attributeFields
      */
-    private function processResults(ExceptionCatalog $catalog, array $outputs, string $projectRoot, array $fields): void
+    private function processResults(ExceptionCatalog $catalog, array $outputs, string $projectRoot, array $attributeFields): void
     {
         if (empty($outputs)) {
-            $this->output->write(Renderers::toText($catalog, $fields));
+            $this->output->write(Renderers::toText($catalog, $attributeFields));
             return;
         }
 
@@ -110,7 +117,7 @@ class Throwpedia
                 mkdir($dir, 0o777, true);
             }
 
-            $content = $this->renderModel($catalog, $target->extension, $fields);
+            $content = $this->renderModel($catalog, $target->extension, $attributeFields);
 
             if (null !== $content) {
                 file_put_contents($fullPath, $content);
@@ -122,21 +129,26 @@ class Throwpedia
     }
 
     /**
-     * @param AttributeField[] $fields
+     * @param array<string, AttributeField[]> $attributeFields
      *
      * @throws \JsonException
      */
-    private function renderModel(ExceptionCatalog $catalog, string $extension, array $fields): ?string
+    private function renderModel(ExceptionCatalog $catalog, string $extension, array $attributeFields): ?string
     {
         return match (strtolower($extension)) {
             'json'           => Renderers::toJson($catalog),
             'yaml', 'yml'    => Renderers::toYaml($catalog),
-            'md', 'markdown' => Renderers::toMarkdown($catalog, $fields),
+            'md', 'markdown' => Renderers::toMarkdown($catalog, $attributeFields),
+            'csv'            => Renderers::toCsv($catalog, $attributeFields),
+            'tsv'            => Renderers::toTsv($catalog, $attributeFields),
+            'psv'            => Renderers::toPsv($catalog, $attributeFields),
+            'xml'            => Renderers::toXml($catalog, $attributeFields),
+            'toml'           => Renderers::toToml($catalog),
             default          => null,
         };
     }
 
-    private function displayValidationIssues(Analyzer $analyzer): void
+    private function displayValidationIssues(Analyzer $analyzer, string $projectRoot): void
     {
         $issues = $analyzer->getValidationIssues();
 
@@ -151,25 +163,30 @@ class Throwpedia
         if (!empty($errors)) {
             $this->output->writeln("\nValidation Errors found:");
             foreach ($errors as $issue) {
-                $this->output->error($this->formatIssue($issue));
+                $this->output->error($this->formatIssue($issue, $projectRoot));
             }
         }
 
         if (!empty($warnings)) {
             $this->output->writeln("\nValidation Warnings found:");
             foreach ($warnings as $issue) {
-                $this->output->warning($this->formatIssue($issue));
+                $this->output->warning($this->formatIssue($issue, $projectRoot));
             }
         }
     }
 
-    private function formatIssue(ValidationIssue $issue): string
+    private function formatIssue(ValidationIssue $issue, string $projectRoot): string
     {
         if ($issue->file) {
+            $file = $issue->file;
+            if (str_starts_with($file, $projectRoot)) {
+                $file = ltrim(substr($file, \strlen($projectRoot)), DIRECTORY_SEPARATOR);
+            }
+
             return \sprintf(
                 '%s at %s:%d (%s::%s)',
                 $issue->message,
-                $issue->file,
+                $file,
                 $issue->line ?? 0,
                 $issue->class ?? '',
                 $issue->method ?? ''

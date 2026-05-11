@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog>
+  <project>
+    <name>tetrode/throwpedia</name>
+    <php>^8.5</php>
+    <total_exceptions>2</total_exceptions>
+  </project>
+  <meta>
+    <version>0.1.0</version>
+    <scan_time>2026-05-11 20:57:42</scan_time>
+  </meta>
+  <entries>
+    <entry>
+      <attributeName>ExceptionReason</attributeName>
+      <exception>App\Exception\UserException::emailTaken</exception>
+      <values>
+        <code>USER_ALREADY_EXISTS</code>
+        <technicalReason>Duplicate entry for unique email field.</technicalReason>
+        <businessReason>An account with this email already exists.</businessReason>
+      </values>
+      <thrown_from>
+        <location>App\Service\UserService::register</location>
+      </thrown_from>
+    </entry>
+    <entry>
+      <attributeName>ExceptionReason</attributeName>
+      <exception>App\Exception\UserException::notFound</exception>
+      <values>
+        <code>USER_NOT_FOUND</code>
+        <technicalReason>The requested user ID does not exist in the database.</technicalReason>
+        <businessReason>The user you are looking for could not be found.</businessReason>
+      </values>
+      <thrown_from>
+        <location>App\Service\UserService::getUser</location>
+      </thrown_from>
+    </entry>
+  </entries>
+</catalog>

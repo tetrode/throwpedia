@@ -8,7 +8,7 @@ codebase. It bridges the gap between technical implementation and business logic
 ## How it works
 
 Throwpedia scans your source directories for PHP files and identifies methods annotated with the `#[ExceptionReason]`
-attribute (or other custom attributes that you can configure in the confiration file). It correlates these annotations 
+attribute (or other custom attributes that you can configure in the configuration file). It correlates these annotations 
 with `throw` statements to build a comprehensive catalog of business-relevant exceptions.
 
 ### Key Features
@@ -31,9 +31,23 @@ Throwpedia is configured via `throwpedia.neon` in your project root, which looks
 source:
     - src
 
-# Attributes to look for (multiple supported)
+# Attributes to look for (multiple supported).
+# You can provide a simple list of attribute names (they will use the global 'fields' or defaults):
+# attributes:
+#     - ExceptionReason
+#     - AuditReason
+#
+# OR provide a map of attribute names to their specific fields.
+# The key is the parameter name in the attribute constructor.
+# For deduplication and unique identification, one parameter should be named 'code'.
 attributes:
-    - ExceptionReason
+    ExceptionReason:
+        code: Error Code
+        technicalReason: Technical Reason
+        businessReason: Business Reason
+    AuditReason:
+        code: Audit ID
+        action: Audit Action
 
 # Define custom fields for the attributes (optional)
 # The key is the parameter name in the attribute constructor.
@@ -43,21 +57,29 @@ fields:
     technicalReason: Technical Reason
     businessReason: Business Reason
 
-# Output files (supports .json, .yaml, .md). Remove the ones that you do not need. Format is deducted from the extension
+# Output files (supports .json, .yaml, .yml, .md, .markdown, .csv, .tsv, .psv, .xml, .toml). Remove the ones that you do not need. Format is deducted from the extension
 outputs:
     - output/exceptions.json
     - output/exceptions.yaml
     - output/exceptions.md
+    - output/exceptions.csv
+    - output/exceptions.tsv
+    - output/exceptions.psv
+    - output/exceptions.xml
+    - output/exceptions.toml
 
 # If true, direct 'new Exception()' is included in the catalog. 
 # If false, it is reported as a validation error.
 allowDirectNew: false
+
+# If true, duplicate code warnings are suppressed. 
+suppressDuplicateCodeWarning: false
 ```
 
 ## Installation
 
 ```bash
-composer install tetrode/throwpedia
+composer require tetrode/throwpedia
 ```
 
 ## Usage
@@ -89,9 +111,14 @@ Throwpedia doesn't just extract data; it validates your documentation quality:
 
 ## Output Formats
 
-- **Markdown**: A clean table perfect for project documentation or GitHub wikis.
+- **Markdown**: A clean table perfect for project documentation or GitHub wikis. Includes project and meta information.
 - **JSON**: Machine-readable format for automated reporting or frontend integration.
 - **YAML**: Human-readable structured format for easy review.
+- **CSV/TSV/PSV**: Delimited formats for spreadsheet or data processing tools.
+- **XML**: Industry standard for data exchange.
+- **TOML**: A minimal configuration format that's easy to read.
+
+Each output format now includes metadata about the project (name, PHP version, total exceptions found) and the scan itself (Throwpedia version, scan time).
 
 ## Versions
 

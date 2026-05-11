@@ -76,7 +76,8 @@ class ThrowpediaTest extends TestCase
             $contents = file_get_contents($this->tempDir . '/output.json');
             $this->assertIsString($contents);
             $json = json_decode($contents, true);
-            $this->assertArrayHasKey('CODE1', $json);
+            $this->assertArrayHasKey('entries', $json);
+            $this->assertArrayHasKey('ExceptionReason:CODE1', $json['entries']);
         } finally {
             chdir($oldCwd);
         }
@@ -154,7 +155,8 @@ class ThrowpediaTest extends TestCase
             $contents = file_get_contents($this->tempDir . '/out.json');
             $this->assertIsString($contents);
             $json = json_decode($contents, true);
-            $this->assertArrayHasKey('SUB', $json);
+            $this->assertArrayHasKey('entries', $json);
+            $this->assertArrayHasKey('ExceptionReason:SUB', $json['entries']);
         } finally {
             chdir($oldCwd);
         }
@@ -184,7 +186,8 @@ class ThrowpediaTest extends TestCase
             $contents = file_get_contents($this->tempDir . '/single.json');
             $this->assertIsString($contents);
             $json = json_decode($contents, true);
-            $this->assertArrayHasKey('SINGLE', $json);
+            $this->assertArrayHasKey('entries', $json);
+            $this->assertArrayHasKey('ExceptionReason:SINGLE', $json['entries']);
         } finally {
             chdir($oldCwd);
         }

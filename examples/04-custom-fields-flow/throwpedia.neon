@@ -3,17 +3,22 @@ source:
     - examples/04-custom-fields-flow/src
 
 attributes:
-    - CustomReason
-    - AnotherReason
-    - AuditReason
-
-fields:
-    code: Error Code
-    severity: Impact Level
-    ticket: Tracker ID
+    CustomReason:
+        code: Error Code
+        severity: Impact Level
+        ticket: Tracker ID
+    AnotherReason:
+        code: Quick Code
+        note: Simple Note
+    AuditReason:
+        code: Audit Code
+        action: Audit Action
 
 outputs:
     - examples/04-custom-fields-flow/output/exceptions.md
     - examples/04-custom-fields-flow/output/exceptions.json
 
 allowDirectNew: false
+
+# Suppress duplicate code warnings (optional)
+suppressDuplicateCodeWarning: true

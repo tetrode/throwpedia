@@ -7,13 +7,18 @@ namespace Tetrode\Throwpedia\DTO;
 readonly class AnalyzerConfig
 {
     /**
-     * @param string[] $attributes
-     * @param AttributeField[] $fields
+     * @param array<string, AttributeField[]> $attributeFields
      */
     public function __construct(
-        public array $attributes = ['ExceptionReason'],
-        public array $fields = [],
+        public array $attributeFields = [
+            'ExceptionReason' => [
+                new AttributeField('code', 'Code', true),
+                new AttributeField('technicalReason', 'Technical Reason'),
+                new AttributeField('businessReason', 'Business Reason'),
+            ],
+        ],
         public bool $allowDirectNew = false,
+        public bool $suppressDuplicateCodeWarning = false,
         public string $projectRoot = '',
     ) {
     }

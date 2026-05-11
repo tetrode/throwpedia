@@ -34,17 +34,17 @@ class Analyzer
         $this->parser = new ParserFactory()->createForNewestSupportedVersion();
         $this->extractor = new Extractor($this->output);
 
-        $this->targetAttributes = $this->config->attributes;
-        $this->extractor->setTargetAttributes($this->targetAttributes);
-        $this->extractor->setFields($this->config->fields);
+        $this->extractor->setAttributeFields($this->config->attributeFields);
+        $this->targetAttributes = array_keys($this->config->attributeFields) ?: ['ExceptionReason'];
 
         $this->allowDirectNew = $this->config->allowDirectNew;
     }
 
     /**
      * @param string[] $files
+     * @param array{version: string, scan_time: string} $meta
      */
-    public function analyze(array $files): ExceptionCatalog
+    public function analyze(array $files, array $meta = ['version' => '0.0.0', 'scan_time' => '']): ExceptionCatalog
     {
         $nameResolver = new NameResolver();
         $resolverTraverser = new NodeTraverser();
@@ -74,19 +74,14 @@ class Analyzer
             }
         }
 
-        return $this->buildModel($this->extractor->getExtractionResults());
+        return $this->buildModel($this->extractor->getExtractionResults(), $meta);
     }
 
-    private function buildModel(ExtractionResults $results): ExceptionCatalog
+    /**
+     * @param array{version: string, scan_time: string} $meta
+     */
+    public function buildModel(ExtractionResults $results, array $meta = ['version' => '0.0.0', 'scan_time' => '']): ExceptionCatalog
     {
-        $codeField = 'code';
-        foreach ($this->config->fields as $field) {
-            if ($field->isCode) {
-                $codeField = $field->name;
-                break;
-            }
-        }
-
         /** @var array<string, ExceptionModelEntry> $model */
         $model = [];
         foreach ($results->methods as $methodData) {
@@ -95,11 +90,20 @@ class Analyzer
             $exceptionsStr = implode(', ', $methodExceptions) ?: 'unknown';
 
             foreach ($methodData->attributes as $attr) {
+                $fields = $this->config->attributeFields[$attr->attributeName] ?? [];
+                $codeField = 'code';
+                foreach ($fields as $field) {
+                    if ($field->isCode) {
+                        $codeField = $field->name;
+                        break;
+                    }
+                }
+
                 $code = $attr->values[$codeField] ?? 'UNKNOWN';
 
                 $foundKey = null;
                 foreach ($model as $existingKey => $entry) {
-                    if ($entry->values === $attr->values) {
+                    if ($entry->attributeName === $attr->attributeName && $entry->values === $attr->values) {
                         $foundKey = $existingKey;
                         break;
                     }
@@ -119,17 +123,18 @@ class Analyzer
                         }
                     }
                     $model[$foundKey] = new ExceptionModelEntry(
+                        attributeName: $attr->attributeName,
                         values: $entry->values,
                         exception: implode(', ', array_filter($existingExceptions)),
                         thrown_from: $newThrownFrom,
                     );
                 } else {
-                    $uniqueKey = $code;
+                    $uniqueKey = $attr->attributeName . ':' . $code;
                     $counter = 1;
                     while (isset($model[$uniqueKey])) {
-                        if (1 === $counter) {
+                        if (1 === $counter && !$this->config->suppressDuplicateCodeWarning) {
                             $this->validationIssues[] = new ValidationIssue(
-                                message: \sprintf("Duplicate code '%s' found with different reasons.", $code),
+                                message: \sprintf("Duplicate code '%s' found with different reasons for attribute '%s'.", $code, $attr->attributeName),
                                 severity: ValidationIssue::SEVERITY_WARNING,
                                 file: $methodData->file,
                                 line: $methodData->line,
@@ -137,10 +142,11 @@ class Analyzer
                                 method: $methodData->method
                             );
                         }
-                        $uniqueKey = $code . '_' . $counter++;
+                        $uniqueKey = $attr->attributeName . ':' . $code . '_' . $counter++;
                     }
 
                     $model[$uniqueKey] = new ExceptionModelEntry(
+                        attributeName: $attr->attributeName,
                         values: $attr->values,
                         exception: $exceptionsStr,
                         thrown_from: [$location],
@@ -154,7 +160,30 @@ class Analyzer
         }
 
         ksort($model);
-        return new ExceptionCatalog($model);
+
+        $projectInfo = $this->getProjectInfo($this->config->projectRoot);
+        $projectInfo['total_exceptions'] = \count($model);
+
+        return new ExceptionCatalog($model, $projectInfo, $meta);
+    }
+
+    private function getProjectInfo(string $projectRoot): array
+    {
+        $info = [
+            'name' => 'unknown',
+            'php'  => 'unknown',
+        ];
+
+        $composerJsonPath = $projectRoot . DIRECTORY_SEPARATOR . 'composer.json';
+        if (file_exists($composerJsonPath)) {
+            $composerJson = json_decode((string)file_get_contents($composerJsonPath), true);
+            if (is_array($composerJson)) {
+                $info['name'] = $composerJson['name'] ?? 'unknown';
+                $info['php'] = $composerJson['require']['php'] ?? 'unknown';
+            }
+        }
+
+        return $info;
     }
 
     /**
@@ -163,6 +192,9 @@ class Analyzer
      */
     private function appendDirectNewThrows(array &$model, array $directNew): void
     {
+        $firstAttrName = array_key_first($this->config->attributeFields) ?: 'ExceptionReason';
+        $fields = $this->config->attributeFields[$firstAttrName] ?? [];
+
         foreach ($directNew as $throw) {
             $exceptionBaseName = str_replace('\\', '/', $throw->exception)
                     |> basename(...)
@@ -172,14 +204,15 @@ class Analyzer
             // Avoid duplicates if multiple direct news of same exception
             $counter = 1;
             $originalCode = $code;
-            while (isset($model[$code])) {
-                $code = $originalCode . '_' . $counter++;
+            $uniqueKey = $firstAttrName . ':' . $code;
+            while (isset($model[$uniqueKey])) {
+                $uniqueKey = $firstAttrName . ':' . $originalCode . '_' . $counter++;
             }
 
             $location = \sprintf('%s::%s', $throw->class, $throw->method);
 
             $values = [];
-            foreach ($this->config->fields as $field) {
+            foreach ($fields as $field) {
                 if ($field->isCode) {
                     $values[$field->name] = $code;
                 } elseif (str_contains(strtolower($field->label), 'business')) {
@@ -191,7 +224,8 @@ class Analyzer
                 }
             }
 
-            $model[$code] = new ExceptionModelEntry(
+            $model[$uniqueKey] = new ExceptionModelEntry(
+                attributeName: $firstAttrName,
                 values: $values,
                 exception: $throw->exception,
                 thrown_from: [$location],

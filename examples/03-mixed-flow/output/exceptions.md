@@ -1,5 +1,7 @@
 # Business Exceptions Catalog
 
+## ExceptionReason
+
 | Code | Technical Reason | Business Reason | Exception | Thrown From |
 | ---- | ---------------- | --------------- | --------- | ----------- |
 | DIRECT_NEW_INVALIDARGUMENTEXCEPTION | Thrown from App\Service\PaymentService::pay | Direct instantiation of InvalidArgumentException | `InvalidArgumentException` | App\Service\PaymentService::pay |

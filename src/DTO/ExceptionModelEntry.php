@@ -11,6 +11,7 @@ readonly class ExceptionModelEntry
      * @param string[] $thrown_from
      */
     public function __construct(
+        public string $attributeName,
         public array $values,
         public string $exception,
         public array $thrown_from,

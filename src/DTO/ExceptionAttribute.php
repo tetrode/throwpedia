@@ -10,6 +10,7 @@ readonly class ExceptionAttribute
      * @param array<string, string> $values
      */
     public function __construct(
+        public string $attributeName,
         public array $values,
     ) {
     }

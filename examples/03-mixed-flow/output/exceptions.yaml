@@ -1,4 +1,5 @@
-DIRECT_NEW_INVALIDARGUMENTEXCEPTION:
+ExceptionReason:DIRECT_NEW_INVALIDARGUMENTEXCEPTION:
+	attributeName: ExceptionReason
 	values:
 		code: DIRECT_NEW_INVALIDARGUMENTEXCEPTION
 		technicalReason: Thrown from App\Service\PaymentService::pay
@@ -8,7 +9,8 @@ DIRECT_NEW_INVALIDARGUMENTEXCEPTION:
 	thrown_from:
 		- App\Service\PaymentService::pay
 
-INVALID_AMOUNT:
+ExceptionReason:INVALID_AMOUNT:
+	attributeName: ExceptionReason
 	values:
 		code: INVALID_AMOUNT
 		technicalReason: 'Amount is <= 0'
@@ -18,7 +20,8 @@ INVALID_AMOUNT:
 	thrown_from:
 		- App\Service\PaymentService::pay
 
-PAYMENT_FAILED:
+ExceptionReason:PAYMENT_FAILED:
+	attributeName: ExceptionReason
 	values:
 		code: PAYMENT_FAILED
 		technicalReason: Gateway timeout

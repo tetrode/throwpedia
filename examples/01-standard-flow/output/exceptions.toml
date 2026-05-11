@@ -1,0 +1,27 @@
+[project]
+name = "tetrode/throwpedia"
+php = "^8.5"
+total_exceptions = 2
+
+[meta]
+version = "0.1.0"
+scan_time = "2026-05-11 20:57:42"
+
+[[entries]]
+attributeName = "ExceptionReason"
+exception = "App\\Exception\\UserException::emailTaken"
+thrown_from = ["App\\Service\\UserService::register"]
+[entries.values]
+code = "USER_ALREADY_EXISTS"
+technicalReason = "Duplicate entry for unique email field."
+businessReason = "An account with this email already exists."
+
+[[entries]]
+attributeName = "ExceptionReason"
+exception = "App\\Exception\\UserException::notFound"
+thrown_from = ["App\\Service\\UserService::getUser"]
+[entries.values]
+code = "USER_NOT_FOUND"
+technicalReason = "The requested user ID does not exist in the database."
+businessReason = "The user you are looking for could not be found."
+

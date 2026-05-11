@@ -60,7 +60,7 @@ class ConfigLoaderTest extends TestCase
 
     public function testInteractiveSetup(): void
     {
-        $input = "src_dir1, src_dir2\nMyException\n./out\ny\n";
+        $input = "src_dir1, src_dir2\nMyException, OtherException\n./out\ny\n";
         $inputStream = fopen('php://memory', 'r+');
         $this->assertIsResource($inputStream);
         fwrite($inputStream, $input);
@@ -73,7 +73,7 @@ class ConfigLoaderTest extends TestCase
             $config = $loader->load(null, $tempDefaultConfigName);
 
             $this->assertEquals(['src_dir1', 'src_dir2'], $config->sources);
-            $this->assertEquals(['MyException'], $config->attributes);
+            $this->assertEquals(['MyException', 'OtherException'], array_keys($config->attributeFields));
             $this->assertTrue($config->allowDirectNew);
 
             $outputPaths = array_map(fn ($o) => $o->path, $config->outputs);

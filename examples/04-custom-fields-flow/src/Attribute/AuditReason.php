@@ -11,8 +11,7 @@ class AuditReason
 {
     public function __construct(
         public string $code,
-        public string $severity,
-        public string $ticket
+        public string $action
     ) {
     }
 }

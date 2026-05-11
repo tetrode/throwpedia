@@ -22,3 +22,7 @@ outputs:
 
 # Is throw new Exception() allowed or is only throw MyException::Method() allowed
 allowDirectNew: false
+
+# Suppress duplicate code warnings (optional)
+suppressDuplicateCodeWarning: false
+

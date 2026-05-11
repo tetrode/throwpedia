@@ -15,18 +15,21 @@ class RenderersTest extends TestCase
     /** @var array<string, ExceptionModelEntry> */
     private array $model;
 
-    /** @var AttributeField[] */
+    /** @var array<string, AttributeField[]> */
     private array $fields;
 
     protected function setUp(): void
     {
         $this->fields = [
-            new AttributeField('code', 'Code', true),
-            new AttributeField('technical', 'Technical'),
-            new AttributeField('business', 'Business'),
+            'ExceptionReason' => [
+                new AttributeField('code', 'Code', true),
+                new AttributeField('technical', 'Technical'),
+                new AttributeField('business', 'Business'),
+            ],
         ];
         $this->model = [
-            'ERR_001' => new ExceptionModelEntry(
+            'ExceptionReason:ERR_001' => new ExceptionModelEntry(
+                attributeName: 'ExceptionReason',
                 values: [
                     'code'      => 'ERR_001',
                     'business'  => 'User not found',
@@ -43,13 +46,15 @@ class RenderersTest extends TestCase
         $json = Renderers::toJson(new ExceptionCatalog($this->model));
         $this->assertJson($json);
         $decoded = json_decode($json, true);
-        $this->assertArrayHasKey('ERR_001', $decoded);
-        $this->assertEquals('User not found', $decoded['ERR_001']['values']['business']);
+        $this->assertArrayHasKey('entries', $decoded);
+        $this->assertArrayHasKey('ExceptionReason:ERR_001', $decoded['entries']);
+        $this->assertEquals('User not found', $decoded['entries']['ExceptionReason:ERR_001']['values']['business']);
     }
 
     public function testToYaml(): void
     {
         $yaml = Renderers::toYaml(new ExceptionCatalog($this->model));
+        $this->assertStringContainsString('entries:', $yaml);
         $this->assertStringContainsString('ERR_001:', $yaml);
         $this->assertStringContainsString('business: User not found', $yaml);
         $this->assertStringContainsString('technical: Database query returned empty result', $yaml);
@@ -71,7 +76,8 @@ class RenderersTest extends TestCase
     public function testToMarkdownWithPipes(): void
     {
         $model = [
-            'ERR_PIPE' => new ExceptionModelEntry(
+            'ExceptionReason:ERR_PIPE' => new ExceptionModelEntry(
+                attributeName: 'ExceptionReason',
                 values: [
                     'code'      => 'ERR_PIPE',
                     'business'  => 'Business | with pipe',
@@ -90,7 +96,8 @@ class RenderersTest extends TestCase
     {
         $text = Renderers::toText(new ExceptionCatalog($this->model), $this->fields);
         $this->assertStringContainsString('Business Exceptions Catalog', $text);
-        $this->assertStringContainsString('[ERR_001]', $text);
+        $this->assertStringContainsString('[ExceptionReason]', $text);
+        $this->assertStringContainsString('(ERR_001)', $text);
         $this->assertStringContainsString('Business: User not found', $text);
         $this->assertStringContainsString('Technical: Database query returned empty result', $text);
         $this->assertStringContainsString('Exception: UserNotFoundException', $text);

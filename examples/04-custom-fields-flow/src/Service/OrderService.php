@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use App\Attribute\CustomReason;
 use App\Attribute\AnotherReason;
 use App\Attribute\AuditReason;
+use App\Attribute\CustomReason;
 use App\Exception\OrderException;
 
 class OrderService
@@ -18,8 +18,7 @@ class OrderService
     )]
     #[AnotherReason(
         code: 'LOGISTIC_DELAY',
-        severity: 'medium',
-        ticket: 'JIRA-999'
+        note: 'Expected delay 2 days'
     )]
     public function checkout(string $sku): void
     {
@@ -34,8 +33,7 @@ class OrderService
     )]
     #[AuditReason(
         code: 'SECURITY_ALERT',
-        severity: 'high',
-        ticket: 'SEC-789'
+        action: 'BLOCK_USER'
     )]
     public function applyCoupon(string $coupon): void
     {

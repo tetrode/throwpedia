@@ -5,8 +5,20 @@ source:
     - src
 
 # Exception Attributes
+# You can provide a simple list of attribute names (they will use the global 'fields' or defaults):
+# attributes:
+#     - ExceptionReason
+#     - AuditReason
+#
+# OR provide a map of attribute names to their specific fields:
 attributes:
-    - ExceptionReason
+    ExceptionReason:
+        code: Code
+        technicalReason: Technical Reason
+        businessReason: Business Reason
+    AuditReason:
+        code: Audit ID
+        action: Audit Action
 
 # Attribute Fields (optional, defaults to code, technicalReason, businessReason)
 fields:
@@ -22,3 +34,6 @@ outputs:
 
 # Is throw new Exception() allowed or is only throw MyException::Method() allowed
 allowDirectNew: false
+
+# Suppress duplicate code warnings (optional)
+suppressDuplicateCodeWarning: false

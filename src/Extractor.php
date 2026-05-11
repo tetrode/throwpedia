@@ -41,11 +41,11 @@ class Extractor extends NodeVisitorAbstract
 
     private string $currentFile = '';
 
-    /** @var array<string> */
-    private array $targetAttributes = ['ExceptionReason'];
+    /** @var array<string, AttributeField[]> */
+    private array $attributeFields = [];
 
-    /** @var AttributeField[] */
-    private array $fields = [];
+    /** @var string[] */
+    private array $targetAttributes = [];
 
     /** @noinspection PhpPropertyOnlyWrittenInspection */
     public function __construct(
@@ -55,19 +55,12 @@ class Extractor extends NodeVisitorAbstract
     }
 
     /**
-     * @param array<string> $attributes
+     * @param array<string, AttributeField[]> $attributeFields
      */
-    public function setTargetAttributes(array $attributes): void
+    public function setAttributeFields(array $attributeFields): void
     {
-        $this->targetAttributes = $attributes;
-    }
-
-    /**
-     * @param AttributeField[] $fields
-     */
-    public function setFields(array $fields): void
-    {
-        $this->fields = $fields;
+        $this->attributeFields = $attributeFields;
+        $this->targetAttributes = array_keys($attributeFields);
     }
 
     public function setCurrentFile(string $file): void
@@ -109,29 +102,28 @@ class Extractor extends NodeVisitorAbstract
             $shortName = $node->name ? $node->name->toString() : '';
 
             $isAttribute = false;
-            foreach ($this->targetAttributes as $target) {
+            foreach ($this->attributeFields as $target => $fields) {
                 if ($shortName === $target || $fullClassName === $target) {
-                    $isAttribute = true;
+                    $this->validateAttributeClass($node, $fields);
                     break;
                 }
-            }
-
-            if ($isAttribute) {
-                $this->validateAttributeClass($node);
             }
         }
     }
 
-    private function validateAttributeClass(Class_ $node): void
+    /**
+     * @param AttributeField[] $fields
+     */
+    private function validateAttributeClass(Class_ $node, array $fields): void
     {
         $className = $node->name ? $node->name->toString() : 'anonymous class';
         $constructor = $node->getMethod('__construct');
-        if (!$constructor || empty($this->fields)) {
+        if (!$constructor || empty($fields)) {
             return;
         }
 
         $params = $constructor->params;
-        foreach ($this->fields as $index => $field) {
+        foreach ($fields as $index => $field) {
             $param = $params[$index] ?? null;
             if (!$param) {
                 $this->validationIssues[] = new ValidationIssue(
@@ -205,15 +197,15 @@ class Extractor extends NodeVisitorAbstract
                 $attrName = $attr->name->toString();
                 $attrBaseName = $attr->name->getLast();
 
-                $isTarget = false;
+                $matchedTarget = null;
                 foreach ($this->targetAttributes as $target) {
                     if ($attrName === $target || $attrBaseName === $target) {
-                        $isTarget = true;
+                        $matchedTarget = $target;
                         break;
                     }
                 }
 
-                if ($isTarget) {
+                if (null !== $matchedTarget) {
                     /** @var array<int|string, string> $args */
                     $args = [];
                     foreach ($attr->args as $arg) {
@@ -226,15 +218,16 @@ class Extractor extends NodeVisitorAbstract
                         }
                     }
 
-                    if (!empty($this->fields)) {
+                    $fields = $this->attributeFields[$matchedTarget] ?? [];
+                    if (!empty($fields)) {
                         $values = [];
-                        foreach ($this->fields as $index => $field) {
+                        foreach ($fields as $index => $field) {
                             $values[$field->name] = (string)($args[$field->name] ?? $args[$index] ?? '');
                         }
-                        $attributes[] = new ExceptionAttribute($values);
+                        $attributes[] = new ExceptionAttribute($matchedTarget, $values);
                     } else {
                         if (isset($args[0]) || isset($args['code'])) {
-                            $attributes[] = new ExceptionAttribute([
+                            $attributes[] = new ExceptionAttribute($matchedTarget, [
                                 'code'            => (string)($args['code'] ?? $args[0] ?? 'UNKNOWN'),
                                 'technicalReason' => (string)($args['technicalReason'] ?? $args['technical'] ?? $args[1] ?? ''),
                                 'businessReason'  => (string)($args['businessReason'] ?? $args['business'] ?? $args[2] ?? ''),

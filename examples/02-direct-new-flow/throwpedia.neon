@@ -14,3 +14,6 @@ outputs:
     - examples/02-direct-new-flow/output/exceptions.yaml
 
 allowDirectNew: true
+
+# Suppress duplicate code warnings (optional)
+suppressDuplicateCodeWarning: false
