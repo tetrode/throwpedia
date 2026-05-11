@@ -11,6 +11,7 @@ use Tetrode\Throwpedia\DTO\ExceptionCatalog;
 class Renderers
 {
     /**
+     * @throws \JsonException
      */
     public static function toJson(ExceptionCatalog $catalog): string
     {
@@ -182,10 +183,7 @@ class Renderers
         return self::toDelimited($catalog, $attributeFields, '|');
     }
 
-    /**
-     * @param array<string, AttributeField[]> $attributeFields
-     */
-    public static function toXml(ExceptionCatalog $catalog, array $attributeFields): string
+    public static function toXml(ExceptionCatalog $catalog): string
     {
         if (!\extension_loaded('simplexml') || !\extension_loaded('dom')) {
             throw new \RuntimeException(
@@ -214,7 +212,7 @@ class Renderers
 
             $values = $item->addChild('values');
             foreach ($entry->values as $key => $value) {
-                $values->addChild($key, htmlspecialchars((string)$value));
+                $values->addChild($key, htmlspecialchars($value));
             }
 
             $thrownFrom = $item->addChild('thrown_from');
@@ -296,7 +294,7 @@ class Renderers
         }
 
         $header = array_merge(['Attribute'], array_values($allFieldNames), ['Exception', 'Thrown From']);
-        fputcsv($fp, $header, $separator, '"', '\\');
+        fputcsv($fp, $header, $separator);
 
         foreach ($catalog->entries as $entry) {
             $row = [$entry->attributeName];
@@ -305,7 +303,7 @@ class Renderers
             }
             $row[] = $entry->exception;
             $row[] = implode(', ', $entry->thrown_from);
-            fputcsv($fp, $row, $separator, '"', '\\');
+            fputcsv($fp, $row, $separator);
         }
 
         rewind($fp);

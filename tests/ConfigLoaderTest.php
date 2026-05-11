@@ -6,6 +6,7 @@ namespace Tetrode\Throwpedia\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Tetrode\Throwpedia\ConfigLoader;
+use Tetrode\Throwpedia\Exception\ConfigurationException;
 use Tetrode\Throwpedia\IO\NullOutput;
 
 class ConfigLoaderTest extends TestCase
@@ -25,7 +26,7 @@ class ConfigLoaderTest extends TestCase
 
     public function testGetConfigFileMissingPath(): void
     {
-        $this->expectException(\Tetrode\Throwpedia\Exception\ConfigurationException::class);
+        $this->expectException(ConfigurationException::class);
         $this->expectExceptionMessage('-f requires a file path');
         $this->loader->getConfigFile(['bin/throwpedia', '-f']);
     }
@@ -39,7 +40,7 @@ class ConfigLoaderTest extends TestCase
 
     public function testLoadExplicitFileNotFound(): void
     {
-        $this->expectException(\Tetrode\Throwpedia\Exception\ConfigurationException::class);
+        $this->expectException(ConfigurationException::class);
         $this->expectExceptionMessage("Configuration file 'non-existent.neon' not found.");
         $this->loader->load('non-existent.neon', 'default.neon');
     }
@@ -50,7 +51,7 @@ class ConfigLoaderTest extends TestCase
         file_put_contents($tempFile, '');
 
         try {
-            $this->expectException(\Tetrode\Throwpedia\Exception\ConfigurationException::class);
+            $this->expectException(ConfigurationException::class);
             $this->expectExceptionMessage("Configuration file '$tempFile' is empty or not parsable.");
             $this->loader->load($tempFile, 'default.neon');
         } finally {

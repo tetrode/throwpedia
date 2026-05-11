@@ -19,7 +19,7 @@ use Tetrode\Throwpedia\IO\OutputInterface;
 
 class Throwpedia
 {
-    public const VERSION = '0.1.0';
+    public const string VERSION = '0.1.0';
 
     public function __construct(
         private readonly OutputInterface $output = new ConsoleOutput(),
@@ -104,6 +104,8 @@ class Throwpedia
     /**
      * @param OutputTarget[] $outputs
      * @param array<string, AttributeField[]> $attributeFields
+     *
+     * @throws \JsonException
      */
     private function processResults(ExceptionCatalog $catalog, array $outputs, string $projectRoot, array $attributeFields): void
     {
@@ -145,7 +147,7 @@ class Throwpedia
             'csv'            => Renderers::toCsv($catalog, $attributeFields),
             'tsv'            => Renderers::toTsv($catalog, $attributeFields),
             'psv'            => Renderers::toPsv($catalog, $attributeFields),
-            'xml'            => Renderers::toXml($catalog, $attributeFields),
+            'xml'            => Renderers::toXml($catalog),
             'toml'           => Renderers::toToml($catalog),
             default          => null,
         };

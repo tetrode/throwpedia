@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Tetrode\Throwpedia\Analyzer;
 use Tetrode\Throwpedia\DTO\AnalyzerConfig;
 use Tetrode\Throwpedia\DTO\ValidationIssue;
+use Tetrode\Throwpedia\IO\BufferedOutput;
 use Tetrode\Throwpedia\IO\NullOutput;
 
 class AnalyzerTest extends TestCase
@@ -119,7 +120,7 @@ class AnalyzerTest extends TestCase
         $code = '<?php invalid syntax here';
         file_put_contents($this->tempFile, $code);
 
-        $bufferedOutput = new \Tetrode\Throwpedia\IO\BufferedOutput();
+        $bufferedOutput = new BufferedOutput();
         $analyzer = new Analyzer($bufferedOutput);
         $analyzer->analyze([$this->tempFile]);
 

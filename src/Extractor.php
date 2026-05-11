@@ -89,19 +89,18 @@ class Extractor extends NodeVisitorAbstract
 
     private function handleNamespace(Namespace_ $node): void
     {
-        $this->currentNamespace = $node->name ? $node->name->toString() : null;
+        $this->currentNamespace = $node->name?->toString();
     }
 
     private function handleClassLike(Node $node): void
     {
         /** @var Class_|Trait_ $node */
-        $this->currentClass = $node->name ? $node->name->toString() : null;
+        $this->currentClass = $node->name?->toString();
 
         if ($node instanceof Class_) {
             $fullClassName = ($this->currentNamespace ? $this->currentNamespace . '\\' : '') . ($this->currentClass ?? '');
             $shortName = $node->name ? $node->name->toString() : '';
 
-            $isAttribute = false;
             foreach ($this->attributeFields as $target => $fields) {
                 if ($shortName === $target || $fullClassName === $target) {
                     $this->validateAttributeClass($node, $fields);

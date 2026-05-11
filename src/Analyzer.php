@@ -191,9 +191,7 @@ class Analyzer
         $fields = $this->config->attributeFields[$firstAttrName] ?? [];
 
         foreach ($directNew as $throw) {
-            $exceptionBaseName = str_replace('\\', '/', $throw->exception)
-                    |> basename(...)
-                    |> strtoupper(...);
+            $exceptionBaseName = strtoupper(basename(str_replace('\\', '/', $throw->exception)));
             $code = 'DIRECT_NEW_' . $exceptionBaseName;
 
             // Avoid duplicates if multiple direct news of same exception

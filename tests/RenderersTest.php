@@ -43,6 +43,9 @@ class RenderersTest extends TestCase
         ];
     }
 
+    /**
+     * @throws \JsonException
+     */
     public function testToJson(): void
     {
         $json = Renderers::toJson(new ExceptionCatalog($this->model));
@@ -123,7 +126,7 @@ class RenderersTest extends TestCase
         $this->assertStringContainsString('**Throwpedia Version:** 1.2.3', $md);
         $this->assertStringContainsString('**Scan time:** 2025-01-01 12:00:00', $md);
 
-        $xml = Renderers::toXml($catalog, $this->fields);
+        $xml = Renderers::toXml($catalog);
         $this->assertStringContainsString('<name>MyProject</name>', $xml);
         $this->assertStringContainsString('<php>8.4</php>', $xml);
         $this->assertStringContainsString('<total_exceptions>42</total_exceptions>', $xml);
