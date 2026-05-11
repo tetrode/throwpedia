@@ -58,6 +58,12 @@ class Extractor extends NodeVisitorAbstract
     public function setCurrentFile(string $file): void
     {
         $this->currentFile = $file;
+        $this->currentNamespace = null;
+        $this->currentClass = null;
+        $this->currentMethod = null;
+        $this->currentFunction = null;
+        $this->currentMethodKey = null;
+
         if ($this->verbosity >= 1) {
             $this->output->writeln("Analyzing file: $file");
         }
@@ -65,35 +71,14 @@ class Extractor extends NodeVisitorAbstract
 
     public function enterNode(Node $node): null
     {
-        if ($node instanceof Namespace_) {
-            $this->handleNamespace($node);
-        }
-
-        if ($node instanceof Class_ || $node instanceof Trait_) {
-            $this->handleClassLike($node);
-        }
-
-        if ($node instanceof ClassMethod) {
-            $this->handleClassMethod($node);
-            if ($this->verbosity >= 2) {
-                $methodName = $node->name->toString();
-                $fullClassName = ($this->currentNamespace ? $this->currentNamespace . '\\' : '') . $this->currentClass;
-                $this->output->writeln("  Analyzing method: $fullClassName::$methodName");
-            }
-        }
-
-        if ($node instanceof Function_) {
-            $this->handleFunction($node);
-            if ($this->verbosity >= 2) {
-                $functionName = $node->name->toString();
-                $fullNamespace = $this->currentNamespace ? $this->currentNamespace . '\\' : '';
-                $this->output->writeln("  Analyzing function: $fullNamespace$functionName");
-            }
-        }
-
-        if ($node instanceof Node\Stmt\Throw_ || $node instanceof Node\Expr\Throw_) {
-            $this->handleThrow($node);
-        }
+        match (true) {
+            $node instanceof Namespace_ => $this->handleNamespace($node),
+            $node instanceof Class_, $node instanceof Trait_ => $this->handleClassLike($node),
+            $node instanceof ClassMethod => $this->handleClassMethod($node),
+            $node instanceof Function_ => $this->handleFunction($node),
+            $node instanceof Node\Stmt\Throw_, $node instanceof Node\Expr\Throw_ => $this->handleThrow($node),
+            default => null,
+        };
 
         return null;
     }
@@ -113,7 +98,11 @@ class Extractor extends NodeVisitorAbstract
     {
         $this->currentMethod = $node;
         $methodName = $node->name->toString();
-        $fullClassName = ($this->currentNamespace ? $this->currentNamespace . '\\' : '') . $this->currentClass;
+        $fullClassName = ($this->currentNamespace ? $this->currentNamespace . '\\' : '') . ($this->currentClass ?? '');
+
+        if ($this->verbosity >= 2) {
+            $this->output->writeln("  Analyzing method: $fullClassName::$methodName");
+        }
 
         $attributes = $this->extractAttributes($node);
 
@@ -133,6 +122,10 @@ class Extractor extends NodeVisitorAbstract
         $this->currentFunction = $node;
         $functionName = $node->name->toString();
         $fullNamespace = ($this->currentNamespace ? $this->currentNamespace . '\\' : '');
+
+        if ($this->verbosity >= 2) {
+            $this->output->writeln("  Analyzing function: $fullNamespace$functionName");
+        }
 
         $attributes = $this->extractAttributes($node);
 

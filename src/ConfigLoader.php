@@ -52,10 +52,11 @@ class ConfigLoader
     {
         $verbosity = 0;
         foreach ($argv as $arg) {
+            if ('-vv' === $arg) {
+                return 2;
+            }
             if ('-v' === $arg) {
                 $verbosity = 1;
-            } elseif ('-vv' === $arg) {
-                $verbosity = 2;
             }
         }
         return $verbosity;
@@ -134,10 +135,20 @@ class ConfigLoader
 
     public function findProjectRoot(): string
     {
-        // If we are in vendor/tetrode/throwpedia, the root is 3 levels up.
-        // But we should be more robust.
+        $cwd = \getcwd();
+        if (false !== $cwd && file_exists($cwd . DIRECTORY_SEPARATOR . 'composer.json')) {
+            return $cwd;
+        }
+
         $dir = __DIR__;
-        while ($dir !== DIRECTORY_SEPARATOR && !file_exists($dir . DIRECTORY_SEPARATOR . 'composer.json')) {
+        $lastFound = null;
+        while ($dir !== DIRECTORY_SEPARATOR) {
+            if (file_exists($dir . DIRECTORY_SEPARATOR . 'composer.json')) {
+                if (file_exists($dir . DIRECTORY_SEPARATOR . 'vendor/tetrode/throwpedia')) {
+                    return $dir;
+                }
+                $lastFound = $dir;
+            }
             $parent = \dirname($dir);
             if ($parent === $dir) {
                 break;
@@ -145,13 +156,6 @@ class ConfigLoader
             $dir = $parent;
         }
 
-        // If we found a composer.json, check if it's our own or the project root.
-        // If we are in vendor, the project root will have a composer.json and a vendor directory.
-        if (file_exists($dir . DIRECTORY_SEPARATOR . 'vendor/tetrode/throwpedia')) {
-            return $dir;
-        }
-
-        // If we are running from the tool's own root (e.g. during development)
-        return \getcwd() ?: $dir;
+        return $cwd ?: ($lastFound ?? $dir);
     }
 }

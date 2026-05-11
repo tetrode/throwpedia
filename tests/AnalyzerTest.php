@@ -108,4 +108,108 @@ PHP;
         $this->assertArrayHasKey('DIRECT_NEW_EXCEPTION', $model);
         $this->assertEquals('Exception', $model['DIRECT_NEW_EXCEPTION']['exception']);
     }
+
+    public function testAnalyzeWithMultipleAttributesOnSameMethod(): void
+    {
+        $code = <<<'PHP'
+<?php
+class MyClass {
+    #[ExceptionReason(code: 'ERR_A', technical: 'Tech A', business: 'Biz A')]
+    #[ExceptionReason(code: 'ERR_B', technical: 'Tech B', business: 'Biz B')]
+    public function methodWithTwoAttributes() {
+        throw MyException::error();
+    }
+}
+PHP;
+        file_put_contents($this->tempFile, $code);
+
+        $analyzer = new Analyzer($this->output);
+        $model = $analyzer->analyze([$this->tempFile]);
+
+        $this->assertCount(2, $model);
+        $this->assertArrayHasKey('ERR_A', $model);
+        $this->assertArrayHasKey('ERR_B', $model);
+
+        $this->assertEquals('Biz A', $model['ERR_A']['business']);
+        $this->assertEquals(['MyClass::methodWithTwoAttributes'], $model['ERR_A']['thrown_from']);
+
+        $this->assertEquals('Biz B', $model['ERR_B']['business']);
+        $this->assertEquals(['MyClass::methodWithTwoAttributes'], $model['ERR_B']['thrown_from']);
+    }
+
+    public function testAnalyzeWithDuplicateAttributeCodesOnSameMethod(): void
+    {
+        $code = <<<'PHP'
+<?php
+class MyClass {
+    #[ExceptionReason(code: 'DUP', technical: 'Tech 1', business: 'Biz 1')]
+    #[ExceptionReason(code: 'DUP', technical: 'Tech 2', business: 'Biz 2')]
+    public function methodWithDuplicateCodes() {
+        throw MyException::error();
+    }
+}
+PHP;
+        file_put_contents($this->tempFile, $code);
+
+        $analyzer = new Analyzer($this->output);
+        $model = $analyzer->analyze([$this->tempFile]);
+
+        // It should probably just have one entry for 'DUP'
+        $this->assertCount(1, $model);
+        $this->assertArrayHasKey('DUP', $model);
+        // The first one wins based on current implementation
+        $this->assertEquals('Biz 1', $model['DUP']['business']);
+        $this->assertEquals(['MyClass::methodWithDuplicateCodes'], $model['DUP']['thrown_from']);
+    }
+
+    public function testAnalyzeWithSameCodeOnDifferentMethods(): void
+    {
+        $code = <<<'PHP'
+<?php
+class ClassA {
+    #[ExceptionReason(code: 'SHARED', technical: 'Tech', business: 'Biz')]
+    public function methodA() { throw E::e(); }
+}
+class ClassB {
+    #[ExceptionReason(code: 'SHARED', technical: 'Tech', business: 'Biz')]
+    public function methodB() { throw E::e(); }
+}
+PHP;
+        file_put_contents($this->tempFile, $code);
+
+        $analyzer = new Analyzer($this->output);
+        $model = $analyzer->analyze([$this->tempFile]);
+
+        $this->assertCount(1, $model);
+        $this->assertArrayHasKey('SHARED', $model);
+        $this->assertCount(2, $model['SHARED']['thrown_from']);
+        $this->assertContains('ClassA::methodA', $model['SHARED']['thrown_from']);
+        $this->assertContains('ClassB::methodB', $model['SHARED']['thrown_from']);
+    }
+
+    public function testAnalyzeWithMultipleAttributesAndMultipleThrows(): void
+    {
+        $code = <<<'PHP'
+<?php
+class MyClass {
+    #[ExceptionReason(code: 'E1', technical: 'T1', business: 'B1')]
+    #[ExceptionReason(code: 'E2', technical: 'T2', business: 'B2')]
+    public function multipleBoth() {
+        if (rand(0,1)) {
+             throw Exc1::error();
+        }
+        throw Exc2::error();
+    }
+}
+PHP;
+        file_put_contents($this->tempFile, $code);
+
+        $analyzer = new Analyzer($this->output);
+        $model = $analyzer->analyze([$this->tempFile]);
+
+        $this->assertCount(2, $model);
+        // Currently, it just takes the first exception found in the method for all its attributes
+        $this->assertEquals('Exc1::error', $model['E1']['exception']);
+        $this->assertEquals('Exc1::error', $model['E2']['exception']);
+    }
 }

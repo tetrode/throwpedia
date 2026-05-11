@@ -46,16 +46,18 @@ class Throwpedia
      */
     private function collectFiles(array|string $sources, string $projectRoot): array
     {
-        if (\is_string($sources)) {
-            $sources = [$sources];
-        }
-
+        $sources = (array)$sources;
         $files = [];
+
         foreach ($sources as $srcDirRel) {
             $srcDir = str_starts_with($srcDirRel, '/') ? $srcDirRel : $projectRoot . DIRECTORY_SEPARATOR . $srcDirRel;
 
             if (!is_dir($srcDir)) {
-                $this->output->warning("Source directory '$srcDir' not found.");
+                if (file_exists($srcDir) && 'php' === pathinfo($srcDir, PATHINFO_EXTENSION)) {
+                    $files[] = $srcDir;
+                } else {
+                    $this->output->warning("Source directory or file '$srcDir' not found.");
+                }
                 continue;
             }
 
@@ -94,42 +96,46 @@ class Throwpedia
      */
     private function processResults(array $model, mixed $outputs, int $verbosity, string $projectRoot): void
     {
-        if (null === $outputs || (\is_array($outputs) && empty($outputs))) {
+        if (empty($outputs)) {
             $this->output->write(Renderers::toText($model));
             return;
         }
 
-        if (\is_string($outputs)) {
-            $outputs = [$outputs];
-        }
+        $outputs = (array)$outputs;
 
         foreach ($outputs as $outputPath) {
-            if (!str_starts_with($outputPath, '/')) {
-                $outputPath = $projectRoot . DIRECTORY_SEPARATOR . $outputPath;
-            }
+            $fullPath = str_starts_with($outputPath, '/') ? $outputPath : $projectRoot . DIRECTORY_SEPARATOR . $outputPath;
 
-            $dir = \dirname($outputPath);
+            $dir = \dirname($fullPath);
             if (!is_dir($dir)) {
                 mkdir($dir, 0o777, true);
             }
 
-            $extension = pathinfo($outputPath, PATHINFO_EXTENSION);
-            $content = match ($extension) {
-                'json'           => Renderers::toJson($model),
-                'yaml', 'yml'    => Renderers::toYaml($model),
-                'md', 'markdown' => Renderers::toMarkdown($model),
-                default          => null,
-            };
+            $extension = pathinfo($fullPath, PATHINFO_EXTENSION);
+            $content = $this->renderModel($model, $extension);
 
             if (null !== $content) {
-                file_put_contents($outputPath, $content);
+                file_put_contents($fullPath, $content);
                 if ($verbosity >= 1) {
-                    $this->output->writeln("Generated: $outputPath");
+                    $this->output->writeln("Generated: $fullPath");
                 }
             } else {
-                $this->output->warning("Unknown output extension '$extension' for $outputPath");
+                $this->output->warning("Unknown output extension '$extension' for $fullPath");
             }
         }
+    }
+
+    /**
+     * @param array<string, mixed> $model
+     */
+    private function renderModel(array $model, string $extension): ?string
+    {
+        return match (strtolower($extension)) {
+            'json'           => Renderers::toJson($model),
+            'yaml', 'yml'    => Renderers::toYaml($model),
+            'md', 'markdown' => Renderers::toMarkdown($model),
+            default          => null,
+        };
     }
 
     /**
