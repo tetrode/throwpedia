@@ -1,0 +1,8 @@
+# Configuration for Flow 02
+source:
+    - examples/02-direct-new-flow/src
+
+outputs:
+    - examples/02-direct-new-flow/output/exceptions.yaml
+
+allowDirectNew: true

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tetrode\Throwpedia\Tests;
 
 use PHPUnit\Framework\TestCase;
+use Tetrode\Throwpedia\DTO\ExceptionCatalog;
 use Tetrode\Throwpedia\DTO\ExceptionModelEntry;
 use Tetrode\Throwpedia\Renderers;
 
@@ -27,7 +28,7 @@ class RenderersTest extends TestCase
 
     public function testToJson(): void
     {
-        $json = Renderers::toJson($this->model);
+        $json = Renderers::toJson(new ExceptionCatalog($this->model));
         $this->assertJson($json);
         $decoded = json_decode($json, true);
         $this->assertArrayHasKey('ERR_001', $decoded);
@@ -36,7 +37,7 @@ class RenderersTest extends TestCase
 
     public function testToYaml(): void
     {
-        $yaml = Renderers::toYaml($this->model);
+        $yaml = Renderers::toYaml(new ExceptionCatalog($this->model));
         $this->assertStringContainsString('ERR_001:', $yaml);
         $this->assertStringContainsString('business: User not found', $yaml);
         $this->assertStringContainsString('technical: Database query returned empty result', $yaml);
@@ -47,7 +48,7 @@ class RenderersTest extends TestCase
 
     public function testToMarkdown(): void
     {
-        $md = Renderers::toMarkdown($this->model);
+        $md = Renderers::toMarkdown(new ExceptionCatalog($this->model));
         $this->assertStringContainsString('# Business Exceptions Catalog', $md);
         $this->assertStringContainsString('ERR_001', $md);
         $this->assertStringContainsString('User not found', $md);
@@ -65,14 +66,14 @@ class RenderersTest extends TestCase
                 thrown_from: ['Loc'],
             ),
         ];
-        $md = Renderers::toMarkdown($model);
+        $md = Renderers::toMarkdown(new ExceptionCatalog($model));
         $this->assertStringContainsString('Business \| with pipe', $md);
         $this->assertStringContainsString('Technical \| with pipe', $md);
     }
 
     public function testToText(): void
     {
-        $text = Renderers::toText($this->model);
+        $text = Renderers::toText(new ExceptionCatalog($this->model));
         $this->assertStringContainsString('Business Exceptions Catalog', $text);
         $this->assertStringContainsString('[ERR_001]', $text);
         $this->assertStringContainsString('Business:  User not found', $text);

@@ -16,6 +16,7 @@ use PhpParser\Node\Stmt\Trait_;
 use PhpParser\NodeVisitorAbstract;
 use Tetrode\Throwpedia\DTO\DirectNewThrow;
 use Tetrode\Throwpedia\DTO\ExceptionAttribute;
+use Tetrode\Throwpedia\DTO\ExtractionResults;
 use Tetrode\Throwpedia\DTO\MethodAnalysisResult;
 use Tetrode\Throwpedia\IO\OutputInterface;
 
@@ -222,6 +223,11 @@ class Extractor extends NodeVisitorAbstract
             $this->currentMethodKey = null;
         }
         return null;
+    }
+
+    public function getExtractionResults(): ExtractionResults
+    {
+        return new ExtractionResults($this->methods, $this->directNewThrows);
     }
 
     /**

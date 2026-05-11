@@ -11,8 +11,11 @@ use PhpParser\Parser;
 use PhpParser\ParserFactory;
 use Tetrode\Throwpedia\DTO\AnalyzerConfig;
 use Tetrode\Throwpedia\DTO\DirectNewThrow;
+use Tetrode\Throwpedia\DTO\ExceptionCatalog;
 use Tetrode\Throwpedia\DTO\ExceptionModelEntry;
+use Tetrode\Throwpedia\DTO\ExtractionResults;
 use Tetrode\Throwpedia\DTO\MethodAnalysisResult;
+use Tetrode\Throwpedia\DTO\ValidationIssue;
 use Tetrode\Throwpedia\IO\OutputInterface;
 
 class Analyzer
@@ -22,9 +25,8 @@ class Analyzer
     private bool $allowDirectNew = false;
     /** @var string[] */
     private array $targetAttributes = ['ExceptionReason'];
-    /** @var string[] */
-    private array $validationWarnings = [];
-    private string $projectRoot = '';
+    /** @var ValidationIssue[] */
+    private array $validationIssues = [];
 
     public function __construct(
         private readonly OutputInterface $output,
@@ -37,15 +39,14 @@ class Analyzer
         $this->extractor->setTargetAttributes($this->targetAttributes);
 
         $this->allowDirectNew = $this->config->allowDirectNew;
-        $this->projectRoot = $this->config->projectRoot;
     }
 
     /**
      * @param string[] $files
      *
-     * @return array<string, ExceptionModelEntry>
+     * @return ExceptionCatalog
      */
-    public function analyze(array $files): array
+    public function analyze(array $files): ExceptionCatalog
     {
         $nameResolver = new NameResolver();
         $resolverTraverser = new NodeTraverser();
@@ -75,23 +76,14 @@ class Analyzer
             }
         }
 
-        return $this->buildModel(
-            $this->extractor->getResults(),
-            $this->extractor->getDirectNewThrows()
-        );
+        return $this->buildModel($this->extractor->getExtractionResults());
     }
 
-    /**
-     * @param array<string, MethodAnalysisResult> $rawResults
-     * @param DirectNewThrow[] $directNew
-     *
-     * @return array<string, ExceptionModelEntry>
-     */
-    private function buildModel(array $rawResults, array $directNew): array
+    private function buildModel(ExtractionResults $results): ExceptionCatalog
     {
         /** @var array<string, ExceptionModelEntry> $model */
         $model = [];
-        foreach ($rawResults as $methodData) {
+        foreach ($results->methods as $methodData) {
             $location = \sprintf('%s::%s', $methodData->class, $methodData->method);
             $methodExceptions = array_unique($methodData->throws);
             $exceptionsStr = implode(', ', $methodExceptions) ?: 'unknown';
@@ -135,34 +127,35 @@ class Analyzer
                     $counter = 1;
                     while (isset($model[$uniqueKey])) {
                         if (1 === $counter) {
-                            $this->validationWarnings[] = \sprintf(
-                                "Duplicate code '%s' found with different reasons at %s:%d (%s).",
-                                $code,
-                                $this->getDisplayPath($methodData->file),
-                                $methodData->line,
-                                $location
+                            $this->validationIssues[] = new ValidationIssue(
+                                message: \sprintf("Duplicate code '%s' found with different reasons.", $code),
+                                severity: ValidationIssue::SEVERITY_WARNING,
+                                file: $methodData->file,
+                                line: $methodData->line,
+                                class: $methodData->class,
+                                method: $methodData->method
                             );
                         }
                         $uniqueKey = $code . '_' . $counter++;
                     }
 
                     $model[$uniqueKey] = new ExceptionModelEntry(
-                        code: $code,
                         business: $biz,
                         technical: $tech,
                         exception: $exceptionsStr,
                         thrown_from: [$location],
+                        code: $code,
                     );
                 }
             }
         }
 
         if ($this->allowDirectNew) {
-            $this->appendDirectNewThrows($model, $directNew);
+            $this->appendDirectNewThrows($model, $results->directNewThrows);
         }
 
         ksort($model);
-        return $model;
+        return new ExceptionCatalog($model);
     }
 
     /**
@@ -172,7 +165,9 @@ class Analyzer
     private function appendDirectNewThrows(array &$model, array $directNew): void
     {
         foreach ($directNew as $throw) {
-            $exceptionBaseName = strtoupper(basename(str_replace('\\', '/', $throw->exception)));
+            $exceptionBaseName = str_replace('\\', '/', $throw->exception)
+                    |> basename(...)
+                    |> strtoupper(...);
             $code = 'DIRECT_NEW_' . $exceptionBaseName;
 
             // Avoid duplicates if multiple direct news of same exception
@@ -193,60 +188,38 @@ class Analyzer
     }
 
     /**
-     * @return string[]
+     * @return ValidationIssue[]
      */
-    public function getValidationErrors(): array
+    public function getValidationIssues(): array
     {
-        return $this->getValidationErrorsInternal();
-    }
+        $issues = $this->validationIssues;
+        $results = $this->extractor->getExtractionResults();
 
-    /**
-     * @return string[]
-     */
-    public function getValidationWarnings(): array
-    {
-        return $this->validationWarnings;
-    }
-
-    private function getDisplayPath(string $file): string
-    {
-        if ($this->projectRoot && str_starts_with($file, $this->projectRoot)) {
-            return ltrim(substr($file, \strlen($this->projectRoot)), DIRECTORY_SEPARATOR);
-        }
-
-        return $file;
-    }
-
-    /**
-     * @return string[]
-     */
-    private function getValidationErrorsInternal(): array
-    {
-        $errors = [];
-        foreach ($this->extractor->getDirectNewThrows() as $throw) {
-            $errors[] = \sprintf(
-                "Direct 'new' usage at %s:%d in %s::%s for %s",
-                $this->getDisplayPath($throw->file),
-                $throw->line,
-                $throw->class,
-                $throw->method,
-                $throw->exception
+        foreach ($results->directNewThrows as $throw) {
+            $issues[] = new ValidationIssue(
+                message: \sprintf("Direct 'new' usage for %s", $throw->exception),
+                severity: ValidationIssue::SEVERITY_ERROR,
+                file: $throw->file,
+                line: $throw->line,
+                class: $throw->class,
+                method: $throw->method
             );
         }
 
-        foreach ($this->extractor->getResults() as $methodData) {
+        foreach ($results->methods as $methodData) {
             if (!empty($methodData->throws) && empty($methodData->attributes)) {
-                $errors[] = \sprintf(
-                    'Missing #[%s] at %s:%d for method %s::%s',
-                    implode('|', $this->targetAttributes),
-                    $this->getDisplayPath($methodData->file),
-                    $methodData->line,
-                    $methodData->class,
-                    $methodData->method
+                $issues[] = new ValidationIssue(
+                    message: \sprintf('Missing #[%s]', implode('|', $this->targetAttributes)),
+                    severity: ValidationIssue::SEVERITY_ERROR,
+                    file: $methodData->file,
+                    line: $methodData->line,
+                    class: $methodData->class,
+                    method: $methodData->method
                 );
             }
         }
 
-        return $errors;
+        return $issues;
     }
+
 }

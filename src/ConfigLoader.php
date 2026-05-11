@@ -6,6 +6,8 @@ namespace Tetrode\Throwpedia;
 
 use Nette\Neon\Neon;
 use Tetrode\Throwpedia\Attributes\ExceptionReason;
+use Tetrode\Throwpedia\DTO\OutputTarget;
+use Tetrode\Throwpedia\DTO\ThrowpediaConfig;
 use Tetrode\Throwpedia\Exception\ConfigurationException;
 use Tetrode\Throwpedia\IO\OutputInterface;
 
@@ -25,11 +27,11 @@ class ConfigLoader
     }
 
     /**
-     * @return array<string, mixed>
+     * @return ThrowpediaConfig
      */
     #[ExceptionReason('load', 'configuration file not found', 'configuration file is missing')]
     #[ExceptionReason('load', 'configuration file not parsable', 'configuration file is not parsable or empty')]
-    public function load(?string $configFile, string $defaultConfigFileName): array
+    public function load(?string $configFile, string $defaultConfigFileName): ThrowpediaConfig
     {
         $projectRoot = $this->findProjectRoot();
         $defaultConfigFile = $projectRoot . DIRECTORY_SEPARATOR . $defaultConfigFileName;
@@ -44,13 +46,13 @@ class ConfigLoader
             if (empty($config)) {
                 throw ConfigurationException::FileNotParsable($configFile);
             }
-            return $config;
+            return $this->createConfig($config, $projectRoot);
         }
 
         if (file_exists($defaultConfigFile)) {
             /** @var array<string, mixed> $config */
             $config = Neon::decode((string)file_get_contents($defaultConfigFile));
-            return $config;
+            return $this->createConfig($config, $projectRoot);
         }
 
         return $this->interactiveSetup($defaultConfigFile);
@@ -75,9 +77,9 @@ class ConfigLoader
     }
 
     /**
-     * @return array<string, mixed>
+     * @return ThrowpediaConfig
      */
-    private function interactiveSetup(string $defaultConfigFile): array
+    private function interactiveSetup(string $defaultConfigFile): ThrowpediaConfig
     {
         $projectRoot = \dirname($defaultConfigFile);
         $this->output->writeln("No configuration file found in $projectRoot. Let's create one.");
@@ -94,7 +96,8 @@ class ConfigLoader
 
         $this->output->write('Allow direct new Exceptions? (y/n) [n]: ');
         $allowNewInput = strtolower(trim((string)fgets($this->inputStream)));
-        $allowNew = ('y' === $allowNewInput || 'yes' === $allowNewInput) ? 'true' : 'false';
+        $allowNew = ('y' === $allowNewInput || 'yes' === $allowNewInput);
+        $allowNewStr = $allowNew ? 'true' : 'false';
 
         $sourceNeon = "source:\n";
         foreach ($srcDirs as $dir) {
@@ -118,14 +121,34 @@ class ConfigLoader
                 - $outDir/exceptions.md
 
             # Is throw new Exception() allowed or is only throw MyException::Method() allowed
-            allowDirectNew: $allowNew
+            allowDirectNew: $allowNewStr
             NEON;
 
         file_put_contents($defaultConfigFile, $neonContent);
         $this->output->writeln("Created $defaultConfigFile");
         /** @var array<string, mixed> $config */
         $config = Neon::decode($neonContent);
-        return $config;
+        return $this->createConfig($config, $projectRoot);
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function createConfig(array $config, string $projectRoot): ThrowpediaConfig
+    {
+        $outputs = [];
+        foreach ((array)($config['outputs'] ?? []) as $outputPath) {
+            $extension = pathinfo((string)$outputPath, PATHINFO_EXTENSION);
+            $outputs[] = new OutputTarget((string)$outputPath, $extension);
+        }
+
+        return new ThrowpediaConfig(
+            sources: (array)($config['source'] ?? ['src']),
+            attributes: (array)($config['attributes'] ?? ['ExceptionReason']),
+            outputs: $outputs,
+            allowDirectNew: (bool)($config['allowDirectNew'] ?? false),
+            projectRoot: $projectRoot
+        );
     }
 
     public function findProjectRoot(): string

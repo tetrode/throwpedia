@@ -1,0 +1,13 @@
+# Configuration for Flow 03 (Mixed)
+source:
+    - examples/03-mixed-flow/src
+
+attributes:
+    - ExceptionReason
+
+outputs:
+    - examples/03-mixed-flow/output/exceptions.json
+    - examples/03-mixed-flow/output/exceptions.yaml
+    - examples/03-mixed-flow/output/exceptions.md
+
+allowDirectNew: true

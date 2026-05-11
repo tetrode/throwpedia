@@ -7,6 +7,7 @@ namespace Tetrode\Throwpedia\Tests;
 use PHPUnit\Framework\TestCase;
 use Tetrode\Throwpedia\Analyzer;
 use Tetrode\Throwpedia\DTO\AnalyzerConfig;
+use Tetrode\Throwpedia\DTO\ValidationIssue;
 use Tetrode\Throwpedia\IO\NullOutput;
 
 class AnalyzerTest extends TestCase
@@ -42,7 +43,8 @@ class AnalyzerTest extends TestCase
         file_put_contents($this->tempFile, $code);
 
         $analyzer = new Analyzer($this->output);
-        $model = $analyzer->analyze([$this->tempFile]);
+        $catalog = $analyzer->analyze([$this->tempFile]);
+        $model = $catalog->entries;
 
         $this->assertArrayHasKey('ERR_1', $model);
         $this->assertEquals('Biz 1', $model['ERR_1']->business);
@@ -65,10 +67,10 @@ class AnalyzerTest extends TestCase
 
         $analyzer = new Analyzer($this->output);
         $analyzer->analyze([$this->tempFile]);
-        $errors = $analyzer->getValidationErrors();
+        $issues = $analyzer->getValidationIssues();
 
-        $this->assertCount(1, $errors);
-        $this->assertStringContainsString('Missing #[ExceptionReason]', $errors[0]);
+        $this->assertCount(1, $issues);
+        $this->assertStringContainsString('Missing #[ExceptionReason]', $issues[0]->message);
     }
 
     public function testValidationErrorsForDirectNew(): void
@@ -85,11 +87,11 @@ class AnalyzerTest extends TestCase
 
         $analyzer = new Analyzer($this->output, new AnalyzerConfig(allowDirectNew: false));
         $analyzer->analyze([$this->tempFile]);
-        $errors = $analyzer->getValidationErrors();
+        $issues = $analyzer->getValidationIssues();
 
-        $this->assertCount(2, $errors);
-        $this->assertStringContainsString("Direct 'new' usage", $errors[0]);
-        $this->assertStringContainsString('Missing #[ExceptionReason]', $errors[1]);
+        $this->assertCount(2, $issues);
+        $this->assertStringContainsString("Direct 'new' usage", $issues[0]->message);
+        $this->assertStringContainsString('Missing #[ExceptionReason]', $issues[1]->message);
     }
 
     public function testAllowDirectNewInModel(): void
@@ -105,7 +107,8 @@ class AnalyzerTest extends TestCase
         file_put_contents($this->tempFile, $code);
 
         $analyzer = new Analyzer($this->output, new AnalyzerConfig(allowDirectNew: true));
-        $model = $analyzer->analyze([$this->tempFile]);
+        $catalog = $analyzer->analyze([$this->tempFile]);
+        $model = $catalog->entries;
 
         $this->assertArrayHasKey('DIRECT_NEW_EXCEPTION', $model);
         $this->assertEquals('Exception', $model['DIRECT_NEW_EXCEPTION']->exception);
@@ -127,8 +130,8 @@ class AnalyzerTest extends TestCase
     {
         $analyzer = new Analyzer($this->output);
         // This should not throw an exception but just continue
-        $model = $analyzer->analyze(['non-existent-file.php']);
-        $this->assertEmpty($model);
+        $catalog = $analyzer->analyze(['non-existent-file.php']);
+        $this->assertEmpty($catalog->entries);
     }
 
     public function testAppendDirectNewThrowsWithDuplicates(): void
@@ -142,7 +145,8 @@ class AnalyzerTest extends TestCase
             PHP;
         file_put_contents($this->tempFile, $code);
         $analyzer = new Analyzer($this->output, new AnalyzerConfig(allowDirectNew: true));
-        $model = $analyzer->analyze([$this->tempFile]);
+        $catalog = $analyzer->analyze([$this->tempFile]);
+        $model = $catalog->entries;
 
         $this->assertArrayHasKey('DIRECT_NEW_EXCEPTION', $model);
         $this->assertArrayHasKey('DIRECT_NEW_EXCEPTION_1', $model);
@@ -163,7 +167,8 @@ class AnalyzerTest extends TestCase
         file_put_contents($this->tempFile, $code);
 
         $analyzer = new Analyzer($this->output);
-        $model = $analyzer->analyze([$this->tempFile]);
+        $catalog = $analyzer->analyze([$this->tempFile]);
+        $model = $catalog->entries;
 
         $this->assertCount(2, $model);
         $this->assertArrayHasKey('ERR_A', $model);
@@ -191,7 +196,8 @@ class AnalyzerTest extends TestCase
         file_put_contents($this->tempFile, $code);
 
         $analyzer = new Analyzer($this->output);
-        $model = $analyzer->analyze([$this->tempFile]);
+        $catalog = $analyzer->analyze([$this->tempFile]);
+        $model = $catalog->entries;
 
         // It should now have two entries because reasons are different
         $this->assertCount(2, $model);
@@ -217,9 +223,12 @@ class AnalyzerTest extends TestCase
         $analyzer = new Analyzer($this->output);
         $analyzer->analyze([$this->tempFile]);
 
-        $warnings = $analyzer->getValidationWarnings();
+        $issues = $analyzer->getValidationIssues();
+        $warnings = array_filter($issues, fn($i) => $i->severity === ValidationIssue::SEVERITY_WARNING);
         $this->assertCount(1, $warnings);
-        $this->assertStringContainsString("Duplicate code 'DUP' found with different reasons", $warnings[0]);
+        $warning = reset($warnings);
+        $this->assertInstanceOf(ValidationIssue::class, $warning);
+        $this->assertStringContainsString("Duplicate code 'DUP' found with different reasons", $warning->message);
     }
 
     public function testAnalyzeWithSameCodeOnDifferentMethods(): void
@@ -238,7 +247,8 @@ class AnalyzerTest extends TestCase
         file_put_contents($this->tempFile, $code);
 
         $analyzer = new Analyzer($this->output);
-        $model = $analyzer->analyze([$this->tempFile]);
+        $catalog = $analyzer->analyze([$this->tempFile]);
+        $model = $catalog->entries;
 
         $this->assertCount(1, $model);
         $this->assertArrayHasKey('SHARED', $model);
@@ -265,7 +275,8 @@ class AnalyzerTest extends TestCase
         file_put_contents($this->tempFile, $code);
 
         $analyzer = new Analyzer($this->output);
-        $model = $analyzer->analyze([$this->tempFile]);
+        $catalog = $analyzer->analyze([$this->tempFile]);
+        $model = $catalog->entries;
 
         $this->assertCount(2, $model);
         // It should now list all exceptions found in the method for all its attributes

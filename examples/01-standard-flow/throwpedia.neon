@@ -1,0 +1,12 @@
+# Configuration for Flow 01
+source:
+    - examples/01-standard-flow/src
+
+attributes:
+    - ExceptionReason
+
+outputs:
+    - examples/01-standard-flow/output/exceptions.json
+    - examples/01-standard-flow/output/exceptions.md
+
+allowDirectNew: false

@@ -72,10 +72,12 @@ class ConfigLoaderTest extends TestCase
         try {
             $config = $loader->load(null, $tempDefaultConfigName);
 
-            $this->assertEquals(['src_dir1', 'src_dir2'], $config['source']);
-            $this->assertEquals(['MyException'], $config['attributes']);
-            $this->assertTrue($config['allowDirectNew']);
-            $this->assertContains('./out/exceptions.json', $config['outputs']);
+            $this->assertEquals(['src_dir1', 'src_dir2'], $config->sources);
+            $this->assertEquals(['MyException'], $config->attributes);
+            $this->assertTrue($config->allowDirectNew);
+
+            $outputPaths = array_map(fn($o) => $o->path, $config->outputs);
+            $this->assertContains('./out/exceptions.json', $outputPaths);
 
             $projectRoot = $loader->findProjectRoot();
             $expectedFile = $projectRoot . DIRECTORY_SEPARATOR . $tempDefaultConfigName;

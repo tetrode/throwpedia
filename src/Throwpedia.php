@@ -8,7 +8,10 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 use Tetrode\Throwpedia\DTO\AnalyzerConfig;
-use Tetrode\Throwpedia\DTO\ExceptionModelEntry;
+use Tetrode\Throwpedia\DTO\ExceptionCatalog;
+use Tetrode\Throwpedia\DTO\OutputTarget;
+use Tetrode\Throwpedia\DTO\ThrowpediaConfig;
+use Tetrode\Throwpedia\DTO\ValidationIssue;
 use Tetrode\Throwpedia\IO\ConsoleOutput;
 use Tetrode\Throwpedia\IO\OutputInterface;
 
@@ -27,13 +30,12 @@ class Throwpedia
         $configLoader = new ConfigLoader($this->output);
         $configFile = $configLoader->getConfigFile($argv);
         $config = $configLoader->load($configFile, 'throwpedia.neon');
-        $projectRoot = $configLoader->findProjectRoot();
 
-        $files = $this->collectFiles($config['source'] ?? ['src'], $projectRoot);
-        $analyzer = $this->initAnalyzer($config, $projectRoot);
+        $files = $this->collectFiles($config->sources, $config->projectRoot);
+        $analyzer = $this->initAnalyzer($config);
 
-        $model = $analyzer->analyze($files);
-        $this->processResults($model, $config['outputs'] ?? null, $projectRoot);
+        $catalog = $analyzer->analyze($files);
+        $this->processResults($catalog, $config->outputs, $config->projectRoot);
 
         $this->output->writeln('Analysis complete.');
 
@@ -75,88 +77,97 @@ class Throwpedia
         return $files;
     }
 
-    /**
-     * @param array<string, mixed> $config
-     */
-    private function initAnalyzer(array $config, string $projectRoot): Analyzer
+    private function initAnalyzer(ThrowpediaConfig $config): Analyzer
     {
         return new Analyzer(
             $this->output,
             new AnalyzerConfig(
-                attributes: $config['attributes'] ?? ['ExceptionReason'],
-                allowDirectNew: $config['allowDirectNew'] ?? false,
-                projectRoot: $projectRoot,
+                attributes: $config->attributes,
+                allowDirectNew: $config->allowDirectNew,
+                projectRoot: $config->projectRoot,
             )
         );
     }
 
     /**
-     * @param array<string, ExceptionModelEntry> $model
+     * @param OutputTarget[] $outputs
      */
-    private function processResults(array $model, mixed $outputs, string $projectRoot): void
+    private function processResults(ExceptionCatalog $catalog, array $outputs, string $projectRoot): void
     {
         if (empty($outputs)) {
-            $this->output->write(Renderers::toText($model));
+            $this->output->write(Renderers::toText($catalog));
             return;
         }
 
-        $outputs = (array)$outputs;
-
-        foreach ($outputs as $outputPath) {
-            $fullPath = str_starts_with($outputPath, '/') ? $outputPath : $projectRoot . DIRECTORY_SEPARATOR . $outputPath;
+        foreach ($outputs as $target) {
+            $fullPath = str_starts_with($target->path, '/') ? $target->path : $projectRoot . DIRECTORY_SEPARATOR . $target->path;
 
             $dir = \dirname($fullPath);
             if (!is_dir($dir)) {
                 mkdir($dir, 0o777, true);
             }
 
-            $extension = pathinfo($fullPath, PATHINFO_EXTENSION);
-            $content = $this->renderModel($model, $extension);
+            $content = $this->renderModel($catalog, $target->extension);
 
             if (null !== $content) {
                 file_put_contents($fullPath, $content);
                 $this->output->writeln("Generated: $fullPath");
             } else {
-                $this->output->warning("Unknown output extension '$extension' for $fullPath");
+                $this->output->warning("Unknown output extension '{$target->extension}' for $fullPath");
             }
         }
     }
 
-    /**
-     * @param array<string, ExceptionModelEntry> $model
-     */
-    private function renderModel(array $model, string $extension): ?string
+    private function renderModel(ExceptionCatalog $catalog, string $extension): ?string
     {
         return match (strtolower($extension)) {
-            'json'           => Renderers::toJson($model),
-            'yaml', 'yml'    => Renderers::toYaml($model),
-            'md', 'markdown' => Renderers::toMarkdown($model),
+            'json'           => Renderers::toJson($catalog),
+            'yaml', 'yml'    => Renderers::toYaml($catalog),
+            'md', 'markdown' => Renderers::toMarkdown($catalog),
             default          => null,
         };
     }
 
     private function displayValidationIssues(Analyzer $analyzer): void
     {
-        $errors = $analyzer->getValidationErrors();
-        $warnings = $analyzer->getValidationWarnings();
+        $issues = $analyzer->getValidationIssues();
 
-        if (empty($errors) && empty($warnings)) {
+        if (empty($issues)) {
             $this->output->writeln("\nNo validation issues found.");
             return;
         }
 
+        $errors = array_filter($issues, fn(ValidationIssue $i) => $i->severity === ValidationIssue::SEVERITY_ERROR);
+        $warnings = array_filter($issues, fn(ValidationIssue $i) => $i->severity === ValidationIssue::SEVERITY_WARNING);
+
         if (!empty($errors)) {
             $this->output->writeln("\nValidation Errors found:");
-            foreach ($errors as $error) {
-                $this->output->error($error);
+            foreach ($errors as $issue) {
+                $this->output->error($this->formatIssue($issue));
             }
         }
 
         if (!empty($warnings)) {
             $this->output->writeln("\nValidation Warnings found:");
-            foreach ($warnings as $warning) {
-                $this->output->warning($warning);
+            foreach ($warnings as $issue) {
+                $this->output->warning($this->formatIssue($issue));
             }
         }
+    }
+
+    private function formatIssue(ValidationIssue $issue): string
+    {
+        if ($issue->file) {
+            return \sprintf(
+                '%s at %s:%d (%s::%s)',
+                $issue->message,
+                $issue->file,
+                $issue->line ?? 0,
+                $issue->class ?? '',
+                $issue->method ?? ''
+            );
+        }
+
+        return $issue->message;
     }
 }
