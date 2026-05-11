@@ -1,0 +1,13 @@
+# Configuration for exception analysis tool
+source:
+    - src
+
+attributes:
+    - ExceptionReason
+
+outputs:
+    - tool/output/exceptions.json
+    - tool/output/exceptions.yaml
+    - tool/output/exceptions.md
+
+allowDirectNew: false

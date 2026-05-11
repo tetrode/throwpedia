@@ -1,0 +1,15 @@
+{
+    "name": "tetrode/throwpedia",
+    "description": "Throwpedia: the static analysis tool for business exceptions",
+    "type": "project",
+    "require": {
+        "php": "^8.5",
+        "nikic/php-parser": "^5.0",
+        "nette/neon": "^3.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "Tetrode\\Throwpedia\\": "."
+        }
+    }
+}
