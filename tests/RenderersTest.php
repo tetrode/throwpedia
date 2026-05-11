@@ -47,6 +47,21 @@ class RenderersTest extends TestCase
         $this->assertStringContainsString('UserRepository::get<br>UserService::find', $md);
     }
 
+    public function testToMarkdownWithPipes(): void
+    {
+        $model = [
+            'ERR_PIPE' => [
+                'business' => 'Business | with pipe',
+                'technical' => 'Technical | with pipe',
+                'exception' => 'Ex',
+                'thrown_from' => ['Loc'],
+            ]
+        ];
+        $md = Renderers::toMarkdown($model);
+        $this->assertStringContainsString('Business \| with pipe', $md);
+        $this->assertStringContainsString('Technical \| with pipe', $md);
+    }
+
     public function testToText(): void
     {
         $text = Renderers::toText($this->model);

@@ -58,7 +58,7 @@ class Analyzer
 
         foreach ($files as $file) {
             try {
-                $code = file_get_contents($file);
+                $code = @file_get_contents($file);
                 if (false === $code) {
                     continue;
                 }

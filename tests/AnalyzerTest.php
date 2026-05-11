@@ -109,6 +109,43 @@ PHP;
         $this->assertEquals('Exception', $model['DIRECT_NEW_EXCEPTION']['exception']);
     }
 
+    public function testAnalyzeHandlesParseError(): void
+    {
+        $code = "<?php invalid syntax here";
+        file_put_contents($this->tempFile, $code);
+
+        $bufferedOutput = new \Tetrode\Throwpedia\IO\BufferedOutput();
+        $analyzer = new Analyzer($bufferedOutput);
+        $analyzer->analyze([$this->tempFile]);
+
+        $this->assertStringContainsString('Parse Error', $bufferedOutput->fetch());
+    }
+
+    public function testAnalyzeHandlesMissingFile(): void
+    {
+        $analyzer = new Analyzer($this->output);
+        // This should not throw an exception but just continue
+        $model = $analyzer->analyze(['non-existent-file.php']);
+        $this->assertEmpty($model);
+    }
+
+    public function testAppendDirectNewThrowsWithDuplicates(): void
+    {
+        $code = <<<'PHP'
+<?php
+class MyClass {
+    public function m1() { throw new \Exception('1'); }
+    public function m2() { throw new \Exception('2'); }
+}
+PHP;
+        file_put_contents($this->tempFile, $code);
+        $analyzer = new Analyzer($this->output, ['allowDirectNew' => true]);
+        $model = $analyzer->analyze([$this->tempFile]);
+
+        $this->assertArrayHasKey('DIRECT_NEW_EXCEPTION', $model);
+        $this->assertArrayHasKey('DIRECT_NEW_EXCEPTION_1', $model);
+    }
+
     public function testAnalyzeWithMultipleAttributesOnSameMethod(): void
     {
         $code = <<<'PHP'

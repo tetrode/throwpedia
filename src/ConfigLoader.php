@@ -10,9 +10,17 @@ use Tetrode\Throwpedia\IO\OutputInterface;
 
 class ConfigLoader
 {
+    /** @var resource */
+    private $inputStream;
+
+    /**
+     * @param resource|null $inputStream
+     */
     public function __construct(
         private readonly OutputInterface $output,
+        $inputStream = null
     ) {
+        $this->inputStream = $inputStream ?? STDIN;
     }
 
     /**
@@ -88,17 +96,17 @@ class ConfigLoader
         $this->output->writeln("No configuration file found in $projectRoot. Let's create one.");
 
         $this->output->write('Source directories (comma separated) [src]: ');
-        $srcDirInput = trim((string)fgets(STDIN)) ?: 'src';
+        $srcDirInput = trim((string)fgets($this->inputStream)) ?: 'src';
         $srcDirs = array_map('trim', explode(',', $srcDirInput));
 
         $this->output->write('Exception attribute [ExceptionReason]: ');
-        $attr = trim((string)fgets(STDIN)) ?: 'ExceptionReason';
+        $attr = trim((string)fgets($this->inputStream)) ?: 'ExceptionReason';
 
         $this->output->write('Output directory [./throwpedia]: ');
-        $outDir = trim((string)fgets(STDIN)) ?: './throwpedia';
+        $outDir = trim((string)fgets($this->inputStream)) ?: './throwpedia';
 
         $this->output->write('Allow direct new Exceptions? (y/n) [n]: ');
-        $allowNewInput = strtolower(trim((string)fgets(STDIN)));
+        $allowNewInput = strtolower(trim((string)fgets($this->inputStream)));
         $allowNew = ('y' === $allowNewInput || 'yes' === $allowNewInput) ? 'true' : 'false';
 
         $sourceNeon = "source:\n";

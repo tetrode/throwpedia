@@ -31,10 +31,65 @@ class ConfigLoaderTest extends TestCase
         $this->assertEquals('config.neon', $this->loader->getConfigFile(['bin/throwpedia', '-f', 'config.neon']));
     }
 
+    public function testGetConfigFileMissingPath(): void
+    {
+        $this->expectException(\Tetrode\Throwpedia\Exception\ConfigurationException::class);
+        $this->expectExceptionMessage("-f requires a file path");
+        $this->loader->getConfigFile(['bin/throwpedia', '-f']);
+    }
+
     public function testFindProjectRoot(): void
     {
         $root = $this->loader->findProjectRoot();
         $this->assertDirectoryExists($root);
         $this->assertFileExists($root . DIRECTORY_SEPARATOR . 'composer.json');
+    }
+
+    public function testLoadExplicitFileNotFound(): void
+    {
+        $this->expectException(\Tetrode\Throwpedia\Exception\ConfigurationException::class);
+        $this->expectExceptionMessage("Configuration file 'non-existent.neon' not found.");
+        $this->loader->load('non-existent.neon', 'default.neon');
+    }
+
+    public function testLoadExplicitFileEmpty(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'tp_empty_');
+        file_put_contents($tempFile, '');
+
+        try {
+            $this->expectException(\Tetrode\Throwpedia\Exception\ConfigurationException::class);
+            $this->expectExceptionMessage("Configuration file '$tempFile' is empty or not parsable.");
+            $this->loader->load($tempFile, 'default.neon');
+        } finally {
+            unlink($tempFile);
+        }
+    }
+
+    public function testInteractiveSetup(): void
+    {
+        $input = "src_dir1, src_dir2\nMyException\n./out\ny\n";
+        $inputStream = fopen('php://memory', 'r+');
+        fwrite($inputStream, $input);
+        rewind($inputStream);
+
+        $tempDefaultConfigName = 'tp_default_' . uniqid() . '.neon';
+        $loader = new ConfigLoader(new NullOutput(), $inputStream);
+        
+        try {
+            $config = $loader->load(null, $tempDefaultConfigName);
+            
+            $this->assertEquals(['src_dir1', 'src_dir2'], $config['source']);
+            $this->assertEquals(['MyException'], $config['attributes']);
+            $this->assertTrue($config['allowDirectNew']);
+            $this->assertContains('./out/exceptions.json', $config['outputs']);
+            
+            $projectRoot = $loader->findProjectRoot();
+            $expectedFile = $projectRoot . DIRECTORY_SEPARATOR . $tempDefaultConfigName;
+            $this->assertFileExists($expectedFile);
+            unlink($expectedFile);
+        } finally {
+            fclose($inputStream);
+        }
     }
 }

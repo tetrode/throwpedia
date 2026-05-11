@@ -161,4 +161,58 @@ PHP;
         $this->assertEquals('E1', $attrs[0]['code']);
         $this->assertEquals('E2', $attrs[1]['code']);
     }
+
+    public function testExtractsFromTrait(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+trait MyTrait {
+    #[ExceptionReason(code: 'TRAIT_ERR', technical: 'T', business: 'B')]
+    public function traitMethod() {
+        throw MyEx::fail();
+    }
+}
+PHP;
+        $this->extractor->setCurrentFile('trait.php');
+        $results = $this->analyzeCode($code);
+        $this->assertCount(1, $results);
+        $data = reset($results);
+        $this->assertEquals('App\MyTrait', $data['class']);
+        $this->assertEquals('traitMethod', $data['method']);
+    }
+
+    public function testExtractsFromGlobalFunction(): void
+    {
+        $code = <<<'PHP'
+<?php
+#[ExceptionReason(code: 'FUNC_ERR', technical: 'T', business: 'B')]
+function myGlobalFunction() {
+    throw MyEx::fail();
+}
+PHP;
+        $this->extractor->setCurrentFile('func.php');
+        $results = $this->analyzeCode($code);
+        $this->assertCount(1, $results);
+        $data = reset($results);
+        $this->assertEquals('', $data['class']);
+        $this->assertEquals('myGlobalFunction', $data['method']);
+    }
+
+    public function testExtractsFromExpressionThrow(): void
+    {
+        $code = <<<'PHP'
+<?php
+class MyClass {
+    public function test($x) {
+        $y = $x ?? throw new \RuntimeException('Fail');
+    }
+}
+PHP;
+        $this->extractor->setCurrentFile('expr.php');
+        $this->analyzeCode($code);
+        $directNew = $this->extractor->getDirectNewThrows();
+        $this->assertCount(1, $directNew);
+        $this->assertEquals('RuntimeException', $directNew[0]['exception']);
+    }
 }

@@ -76,4 +76,154 @@ NEON;
             chdir($oldCwd);
         }
     }
+
+    public function testSourceNotFoundWarning(): void
+    {
+        $config = <<<'NEON'
+source:
+    - non_existent_dir
+NEON;
+        file_put_contents($this->tempDir . '/throwpedia.neon', $config);
+        $oldCwd = getcwd();
+        chdir($this->tempDir);
+
+        try {
+            $bufferedOutput = new BufferedOutput();
+            $throwpedia = new Throwpedia($bufferedOutput);
+            $throwpedia->run(['bin/throwpedia', '-f', 'throwpedia.neon']);
+            
+            $this->assertStringContainsString("Warning: Source directory or file", $bufferedOutput->fetch());
+        } finally {
+            chdir($oldCwd);
+        }
+    }
+
+    public function testUnknownOutputExtensionWarning(): void
+    {
+        $config = <<<'NEON'
+source:
+    - src
+outputs:
+    - output.unknown
+NEON;
+        file_put_contents($this->tempDir . '/throwpedia.neon', $config);
+        $oldCwd = getcwd();
+        chdir($this->tempDir);
+
+        try {
+            $bufferedOutput = new BufferedOutput();
+            $throwpedia = new Throwpedia($bufferedOutput);
+            $throwpedia->run(['bin/throwpedia', '-f', 'throwpedia.neon']);
+            
+            $this->assertStringContainsString("Warning: Unknown output extension 'unknown'", $bufferedOutput->fetch());
+        } finally {
+            chdir($oldCwd);
+        }
+    }
+
+    public function testRecursiveCollection(): void
+    {
+        mkdir($this->tempDir . '/src/SubDir');
+        $code = "<?php class SubClass { #[ExceptionReason('SUB', 'T', 'B')] public function m() { throw E::e(); } }";
+        file_put_contents($this->tempDir . '/src/SubDir/SubClass.php', $code);
+
+        $config = <<<'NEON'
+source:
+    - src
+outputs:
+    - out.json
+NEON;
+        file_put_contents($this->tempDir . '/throwpedia.neon', $config);
+        $oldCwd = getcwd();
+        chdir($this->tempDir);
+
+        try {
+            $bufferedOutput = new BufferedOutput();
+            $throwpedia = new Throwpedia($bufferedOutput);
+            $throwpedia->run(['bin/throwpedia', '-f', 'throwpedia.neon']);
+            
+            $this->assertFileExists($this->tempDir . '/out.json');
+            $json = json_decode(file_get_contents($this->tempDir . '/out.json'), true);
+            $this->assertArrayHasKey('SUB', $json);
+        } finally {
+            chdir($oldCwd);
+        }
+    }
+
+    public function testSingleFileSource(): void
+    {
+        $code = "<?php class Single { #[ExceptionReason('SINGLE', 'T', 'B')] public function m() { throw E::e(); } }";
+        file_put_contents($this->tempDir . '/Single.php', $code);
+
+        $config = <<<'NEON'
+source:
+    - Single.php
+outputs:
+    - single.json
+NEON;
+        file_put_contents($this->tempDir . '/throwpedia.neon', $config);
+        $oldCwd = getcwd();
+        chdir($this->tempDir);
+
+        try {
+            $bufferedOutput = new BufferedOutput();
+            $throwpedia = new Throwpedia($bufferedOutput);
+            $throwpedia->run(['bin/throwpedia', '-f', 'throwpedia.neon']);
+            
+            $json = json_decode(file_get_contents($this->tempDir . '/single.json'), true);
+            $this->assertArrayHasKey('SINGLE', $json);
+        } finally {
+            chdir($oldCwd);
+        }
+    }
+
+    public function testNestedOutputDirectory(): void
+    {
+        $config = <<<'NEON'
+source:
+    - src
+outputs:
+    - nested/dir/output.json
+NEON;
+        file_put_contents($this->tempDir . '/throwpedia.neon', $config);
+        $oldCwd = getcwd();
+        chdir($this->tempDir);
+
+        try {
+            $bufferedOutput = new BufferedOutput();
+            $throwpedia = new Throwpedia($bufferedOutput);
+            $throwpedia->run(['bin/throwpedia', '-f', 'throwpedia.neon']);
+            
+            $this->assertDirectoryExists($this->tempDir . '/nested/dir');
+            $this->assertFileExists($this->tempDir . '/nested/dir/output.json');
+        } finally {
+            chdir($oldCwd);
+        }
+    }
+
+    public function testCaseInsensitiveExtensionMatchingInRender(): void
+    {
+        $code = "<?php class Test { #[ExceptionReason('UPPER', 'T', 'B')] public function m() { throw E::e(); } }";
+        file_put_contents($this->tempDir . '/src/Test.php', $code);
+
+        $config = <<<'NEON'
+source:
+    - src
+outputs:
+    - output.JSON
+NEON;
+        file_put_contents($this->tempDir . '/throwpedia.neon', $config);
+        $oldCwd = getcwd();
+        chdir($this->tempDir);
+
+        try {
+            $bufferedOutput = new BufferedOutput();
+            $throwpedia = new Throwpedia($bufferedOutput);
+            $throwpedia->run(['bin/throwpedia', '-f', 'throwpedia.neon']);
+            
+            $this->assertFileExists($this->tempDir . '/output.JSON');
+        } finally {
+            chdir($oldCwd);
+        }
+    }
 }
