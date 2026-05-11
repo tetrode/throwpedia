@@ -76,4 +76,3 @@ The tool generates machine-readable and human-readable documentation:
 The tool reports:
 - Methods that throw exceptions but lack the required attribute.
 - Direct `new` usage (unless `allowDirectNew` is true, it is reported as a validation error).
-# throwpedia

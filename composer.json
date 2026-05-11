@@ -1,5 +1,6 @@
 {
     "name": "tetrode/throwpedia",
+    "bin": ["bin/throwpedia"],
     "description": "Throwpedia: the static analysis tool for business exceptions",
     "type": "project",
     "require": {
