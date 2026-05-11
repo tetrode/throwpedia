@@ -14,6 +14,7 @@ use PhpParser\Node\Stmt\Function_;
 use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\Node\Stmt\Trait_;
 use PhpParser\NodeVisitorAbstract;
+use Tetrode\Throwpedia\IO\OutputInterface;
 
 class Extractor extends NodeVisitorAbstract
 {
@@ -26,7 +27,7 @@ class Extractor extends NodeVisitorAbstract
     /** @var array<string, array{file: string, line: int, class: string, method: string, attributes: array<mixed>, throws: array<string>}> */
     private array $methods = [];
 
-    /** @var array<array{file: string, line: int, class: string, method: string, exception: string, factory: string}> */
+    /** @var array<array{file: string, line: int, class: string, method: string, exception: string}> */
     private array $directNewThrows = [];
 
     private string $currentFile = '';
@@ -36,6 +37,14 @@ class Extractor extends NodeVisitorAbstract
 
     private int $verbosity = 0;
 
+    public function __construct(
+        private readonly OutputInterface $output,
+    ) {
+    }
+
+    /**
+     * @param array<string> $attributes
+     */
     public function setTargetAttributes(array $attributes): void
     {
         $this->targetAttributes = $attributes;
@@ -50,7 +59,7 @@ class Extractor extends NodeVisitorAbstract
     {
         $this->currentFile = $file;
         if ($this->verbosity >= 1) {
-            echo "Analyzing file: $file\n";
+            $this->output->writeln("Analyzing file: $file");
         }
     }
 
@@ -69,7 +78,7 @@ class Extractor extends NodeVisitorAbstract
             if ($this->verbosity >= 2) {
                 $methodName = $node->name->toString();
                 $fullClassName = ($this->currentNamespace ? $this->currentNamespace . '\\' : '') . $this->currentClass;
-                echo "  Analyzing method: $fullClassName::$methodName\n";
+                $this->output->writeln("  Analyzing method: $fullClassName::$methodName");
             }
         }
 
@@ -78,7 +87,7 @@ class Extractor extends NodeVisitorAbstract
             if ($this->verbosity >= 2) {
                 $functionName = $node->name->toString();
                 $fullNamespace = $this->currentNamespace ? $this->currentNamespace . '\\' : '';
-                echo "  Analyzing function: $fullNamespace$functionName\n";
+                $this->output->writeln("  Analyzing function: $fullNamespace$functionName");
             }
         }
 
@@ -158,28 +167,20 @@ class Extractor extends NodeVisitorAbstract
                     $args = [];
                     foreach ($attr->args as $arg) {
                         if ($arg->value instanceof Node\Scalar\String_) {
-                            $args[] = $arg->value->value;
-                        } elseif (null !== $arg->name) {
-                            if ($arg->value instanceof Node\Scalar\String_) {
+                            if (null !== $arg->name) {
                                 $args[$arg->name->toString()] = $arg->value->value;
+                            } else {
+                                $args[] = $arg->value->value;
                             }
                         }
                     }
 
                     if (isset($args[0]) || isset($args['code'])) {
-                        if (isset($args[0])) {
-                            $attributes[] = [
-                                'code'      => $args[0] ?? 'UNKNOWN',
-                                'technical' => $args[1] ?? '',
-                                'business'  => $args[2] ?? '',
-                            ];
-                        } else {
-                            $attributes[] = [
-                                'code'      => $args['code'] ?? 'UNKNOWN',
-                                'technical' => $args['technicalReason'] ?? $args['technical'] ?? '',
-                                'business'  => $args['businessReason'] ?? $args['business'] ?? '',
-                            ];
-                        }
+                        $attributes[] = [
+                            'code'      => (string)($args['code'] ?? $args[0] ?? 'UNKNOWN'),
+                            'technical' => (string)($args['technicalReason'] ?? $args['technical'] ?? $args[1] ?? ''),
+                            'business'  => (string)($args['businessReason'] ?? $args['business'] ?? $args[2] ?? ''),
+                        ];
                     }
                 }
             }
@@ -206,13 +207,6 @@ class Extractor extends NodeVisitorAbstract
         } elseif ($node->expr instanceof New_) {
             $class = $node->expr->class;
             if ($class instanceof Name) {
-                $locationName = 'unknown';
-                if ($this->currentMethod) {
-                    $locationName = ($this->currentNamespace ? $this->currentNamespace . '\\' : '') . $this->currentClass . '::' . $this->currentMethod->name->toString();
-                } elseif ($this->currentFunction) {
-                    $locationName = ($this->currentNamespace ? $this->currentNamespace . '\\' : '') . $this->currentFunction->name->toString();
-                }
-
                 $this->directNewThrows[] = [
                     'file'      => $this->currentFile,
                     'line'      => $node->getLine(),

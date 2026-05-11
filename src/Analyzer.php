@@ -7,21 +7,23 @@ namespace Tetrode\Throwpedia;
 use PhpParser\Error;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor\NameResolver;
+use PhpParser\Parser;
 use PhpParser\ParserFactory;
+use Tetrode\Throwpedia\IO\OutputInterface;
 
 class Analyzer
 {
-    private \PhpParser\Parser $parser;
-    private NodeTraverser $traverser;
+    private Parser $parser;
     private Extractor $extractor;
-
     private bool $allowDirectNew = false;
     private int $verbosity = 0;
 
-    public function __construct(array $config = [])
-    {
-        $this->parser = new ParserFactory()->createForNewestSupportedVersion();
-        $this->extractor = new Extractor();
+    public function __construct(
+        private readonly OutputInterface $output,
+        array $config = []
+    ) {
+        $this->parser = (new ParserFactory())->createForNewestSupportedVersion();
+        $this->extractor = new Extractor($this->output);
 
         if (isset($config['attributes'])) {
             $this->extractor->setTargetAttributes($config['attributes']);
@@ -30,10 +32,6 @@ class Analyzer
         if (isset($config['allowDirectNew'])) {
             $this->allowDirectNew = (bool)$config['allowDirectNew'];
         }
-
-        $this->traverser = new NodeTraverser();
-        $this->traverser->addVisitor(new NameResolver());
-        $this->traverser->addVisitor($this->extractor);
     }
 
     public function setVerbosity(int $level): void
@@ -42,6 +40,10 @@ class Analyzer
         $this->extractor->setVerbosity($level);
     }
 
+    /**
+     * @param array<string> $files
+     * @return array<string, mixed>
+     */
     public function analyze(array $files): array
     {
         $nameResolver = new NameResolver();
@@ -67,7 +69,7 @@ class Analyzer
                 $traverser->addVisitor($this->extractor);
                 $traverser->traverse($stmts);
             } catch (Error $e) {
-                echo "Parse Error in {$file}: {$e->getMessage()}\n";
+                $this->output->error("Parse Error in {$file}: {$e->getMessage()}");
             }
         }
 

@@ -4,28 +4,24 @@ declare(strict_types=1);
 
 namespace Tetrode\Throwpedia;
 
+use Nette\Neon\Neon;
+
 class Renderers
 {
+    /**
+     * @param array<string, mixed> $model
+     */
     public static function toJson(array $model): string
     {
-        return json_encode($model, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        return json_encode($model, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
     }
 
+    /**
+     * @param array<string, mixed> $model
+     */
     public static function toYaml(array $model): string
     {
-        // Simple YAML generator to avoid adding dependencies
-        $yaml = '';
-        foreach ($model as $code => $data) {
-            $yaml .= "$code:\n";
-            $yaml .= "  business: \"{$data['business']}\"\n";
-            $yaml .= "  technical: \"{$data['technical']}\"\n";
-            $yaml .= "  exception: \"{$data['exception']}\"\n";
-            $yaml .= "  thrown_from:\n";
-            foreach ($data['thrown_from'] as $loc) {
-                $yaml .= "    - \"$loc\"\n";
-            }
-        }
-        return $yaml;
+        return Neon::encode($model, blockMode: true);
     }
 
     public static function toMarkdown(array $model): string
@@ -35,8 +31,10 @@ class Renderers
         $md .= "|------|----------------------|-----------------------|-----------|-------------|\n";
 
         foreach ($model as $code => $data) {
+            $business = str_replace('|', '\\|', (string)$data['business']);
+            $technical = str_replace('|', '\\|', (string)$data['technical']);
             $thrownFrom = implode('<br>', $data['thrown_from']);
-            $md .= "| $code | {$data['business']} | {$data['technical']} | `{$data['exception']}` | $thrownFrom |\n";
+            $md .= "| $code | $business | $technical | `{$data['exception']}` | $thrownFrom |\n";
         }
 
         return $md;

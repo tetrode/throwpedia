@@ -1,0 +1,14 @@
+# Configuration for Throwpedia
+
+source:
+    - src
+
+attributes:
+    - ExceptionReason
+
+outputs:
+    - ./output/exceptions.json
+    - ./output/exceptions.yaml
+    - ./output/exceptions.md
+
+allowDirectNew: false

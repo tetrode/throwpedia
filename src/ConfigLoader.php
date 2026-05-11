@@ -5,28 +5,33 @@ declare(strict_types=1);
 namespace Tetrode\Throwpedia;
 
 use Nette\Neon\Neon;
+use Tetrode\Throwpedia\Exception\ConfigurationException;
+use Tetrode\Throwpedia\IO\OutputInterface;
 
 class ConfigLoader
 {
+    public function __construct(
+        private readonly OutputInterface $output,
+    ) {
+    }
+
     /**
      * @return array<string, mixed>
      */
-    public static function load(?string $configFile, string $defaultConfigFileName): array
+    public function load(?string $configFile, string $defaultConfigFileName): array
     {
-        $projectRoot = self::findProjectRoot();
+        $projectRoot = $this->findProjectRoot();
         $defaultConfigFile = $projectRoot . DIRECTORY_SEPARATOR . $defaultConfigFileName;
 
         if (null !== $configFile) {
             if (!file_exists($configFile)) {
-                echo "Error: Configuration file '$configFile' not found.\n";
-                exit(1);
+                throw ConfigurationException::FileNotFound($configFile);
             }
             $content = file_get_contents($configFile);
             /** @var array<string, mixed> $config */
             $config = Neon::decode((string)$content);
             if (empty($config)) {
-                echo "Error: Configuration file '$configFile' is empty or not parsable.\n";
-                exit(1);
+                throw ConfigurationException::FileNotParsable($configFile);
             }
             return $config;
         }
@@ -37,13 +42,13 @@ class ConfigLoader
             return $config;
         }
 
-        return self::interactiveSetup($defaultConfigFile);
+        return $this->interactiveSetup($defaultConfigFile);
     }
 
     /**
      * @param string[] $argv
      */
-    public static function getVerbosity(array $argv): int
+    public function getVerbosity(array $argv): int
     {
         $verbosity = 0;
         foreach ($argv as $arg) {
@@ -59,7 +64,7 @@ class ConfigLoader
     /**
      * @param string[] $argv
      */
-    public static function getConfigFile(array $argv): ?string
+    public function getConfigFile(array $argv): ?string
     {
         $count = \count($argv);
         for ($i = 0; $i < $count; $i++) {
@@ -67,33 +72,31 @@ class ConfigLoader
                 if (isset($argv[$i + 1])) {
                     return $argv[$i + 1];
                 }
-                echo "Error: -f flag requires a file path.\n";
-                exit(1);
+                throw ConfigurationException::FilePathNotGiven();
             }
         }
         return null;
     }
 
-
     /**
      * @return array<string, mixed>
      */
-    private static function interactiveSetup(string $defaultConfigFile): array
+    private function interactiveSetup(string $defaultConfigFile): array
     {
         $projectRoot = \dirname($defaultConfigFile);
-        echo "No configuration file found in $projectRoot. Let's create one.\n";
+        $this->output->writeln("No configuration file found in $projectRoot. Let's create one.");
 
-        echo 'Source directories (comma separated) [src]: ';
+        $this->output->write('Source directories (comma separated) [src]: ');
         $srcDirInput = trim((string)fgets(STDIN)) ?: 'src';
         $srcDirs = array_map('trim', explode(',', $srcDirInput));
 
-        echo 'Exception attribute [ExceptionReason]: ';
+        $this->output->write('Exception attribute [ExceptionReason]: ');
         $attr = trim((string)fgets(STDIN)) ?: 'ExceptionReason';
 
-        echo 'Output directory [./throwpedia]: ';
+        $this->output->write('Output directory [./throwpedia]: ');
         $outDir = trim((string)fgets(STDIN)) ?: './throwpedia';
 
-        echo 'Allow direct new Exceptions? (y/n) [n]: ';
+        $this->output->write('Allow direct new Exceptions? (y/n) [n]: ');
         $allowNewInput = strtolower(trim((string)fgets(STDIN)));
         $allowNew = ('y' === $allowNewInput || 'yes' === $allowNewInput) ? 'true' : 'false';
 
@@ -123,12 +126,13 @@ class ConfigLoader
             NEON;
 
         file_put_contents($defaultConfigFile, $neonContent);
-        echo "Created $defaultConfigFile\n";
+        $this->output->writeln("Created $defaultConfigFile");
         /** @var array<string, mixed> $config */
         $config = Neon::decode($neonContent);
         return $config;
     }
-    public static function findProjectRoot(): string
+
+    public function findProjectRoot(): string
     {
         // If we are in vendor/tetrode/throwpedia, the root is 3 levels up.
         // But we should be more robust.

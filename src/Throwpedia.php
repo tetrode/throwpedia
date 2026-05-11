@@ -7,28 +7,36 @@ namespace Tetrode\Throwpedia;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
+use Tetrode\Throwpedia\IO\ConsoleOutput;
+use Tetrode\Throwpedia\IO\OutputInterface;
 
 class Throwpedia
 {
+    public function __construct(
+        private readonly OutputInterface $output = new ConsoleOutput(),
+    ) {
+    }
+
     /**
      * @param string[] $argv
      */
-    public static function run(array $argv): void
+    public function run(array $argv): void
     {
-        $verbosity = ConfigLoader::getVerbosity($argv);
-        $configFile = ConfigLoader::getConfigFile($argv);
-        $config = ConfigLoader::load($configFile, 'throwpedia.neon');
-        $projectRoot = ConfigLoader::findProjectRoot();
+        $configLoader = new ConfigLoader($this->output);
+        $verbosity = $configLoader->getVerbosity($argv);
+        $configFile = $configLoader->getConfigFile($argv);
+        $config = $configLoader->load($configFile, 'throwpedia.neon');
+        $projectRoot = $configLoader->findProjectRoot();
 
-        $files = self::collectFiles($config['source'] ?? ['src'], $projectRoot);
-        $analyzer = self::initAnalyzer($config, $verbosity);
+        $files = $this->collectFiles($config['source'] ?? ['src'], $projectRoot);
+        $analyzer = $this->initAnalyzer($config, $verbosity);
 
         $model = $analyzer->analyze($files);
-        self::processResults($model, $config['outputs'] ?? null, $verbosity, $projectRoot);
+        $this->processResults($model, $config['outputs'] ?? null, $verbosity, $projectRoot);
 
-        echo "Analysis complete.\n";
+        $this->output->writeln("Analysis complete.");
 
-        self::displayValidationErrors($analyzer->getValidationErrors());
+        $this->displayValidationErrors($analyzer->getValidationErrors());
     }
 
     /**
@@ -36,7 +44,7 @@ class Throwpedia
      *
      * @return array<string>
      */
-    private static function collectFiles(array|string $sources, string $projectRoot): array
+    private function collectFiles(array|string $sources, string $projectRoot): array
     {
         if (\is_string($sources)) {
             $sources = [$sources];
@@ -47,7 +55,7 @@ class Throwpedia
             $srcDir = str_starts_with($srcDirRel, '/') ? $srcDirRel : $projectRoot . DIRECTORY_SEPARATOR . $srcDirRel;
 
             if (!is_dir($srcDir)) {
-                echo "Warning: Source directory '$srcDir' not found.\n";
+                $this->output->warning("Source directory '$srcDir' not found.");
                 continue;
             }
 
@@ -67,12 +75,15 @@ class Throwpedia
     /**
      * @param array<string, mixed> $config
      */
-    private static function initAnalyzer(array $config, int $verbosity): Analyzer
+    private function initAnalyzer(array $config, int $verbosity): Analyzer
     {
-        $analyzer = new Analyzer([
-            'attributes'     => $config['attributes'] ?? ['ExceptionReason'],
-            'allowDirectNew' => $config['allowDirectNew'] ?? false,
-        ]);
+        $analyzer = new Analyzer(
+            $this->output,
+            [
+                'attributes'     => $config['attributes'] ?? ['ExceptionReason'],
+                'allowDirectNew' => $config['allowDirectNew'] ?? false,
+            ]
+        );
         $analyzer->setVerbosity($verbosity);
 
         return $analyzer;
@@ -81,10 +92,10 @@ class Throwpedia
     /**
      * @param array<string, mixed> $model
      */
-    private static function processResults(array $model, mixed $outputs, int $verbosity, string $projectRoot): void
+    private function processResults(array $model, mixed $outputs, int $verbosity, string $projectRoot): void
     {
         if (null === $outputs || (\is_array($outputs) && empty($outputs))) {
-            echo Renderers::toText($model);
+            $this->output->write(Renderers::toText($model));
             return;
         }
 
@@ -113,10 +124,10 @@ class Throwpedia
             if (null !== $content) {
                 file_put_contents($outputPath, $content);
                 if ($verbosity >= 1) {
-                    echo "Generated: $outputPath\n";
+                    $this->output->writeln("Generated: $outputPath");
                 }
             } else {
-                echo "Warning: Unknown output extension '$extension' for $outputPath\n";
+                $this->output->warning("Unknown output extension '$extension' for $outputPath");
             }
         }
     }
@@ -124,15 +135,15 @@ class Throwpedia
     /**
      * @param array<string> $errors
      */
-    private static function displayValidationErrors(array $errors): void
+    private function displayValidationErrors(array $errors): void
     {
         if (!empty($errors)) {
-            echo "\nValidation Errors found:\n";
+            $this->output->writeln("\nValidation Errors found:");
             foreach ($errors as $error) {
-                echo "- $error\n";
+                $this->output->writeln("- $error");
             }
         } else {
-            echo "\nNo validation errors found.\n";
+            $this->output->writeln("\nNo validation errors found.");
         }
     }
 }
