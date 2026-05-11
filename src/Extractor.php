@@ -24,7 +24,7 @@ class Extractor extends NodeVisitorAbstract
     private ?Function_ $currentFunction = null;
     private ?string $currentMethodKey = null;
 
-    /** @var array<string, array{file: string, line: int, class: string, method: string, attributes: array<mixed>, throws: array<string>}> */
+    /** @var array<string, array{file: string, line: int, class: string, method: string, attributes: array<array{code: string, technical: string, business: string}>, throws: array<string>}> */
     private array $methods = [];
 
     /** @var array<array{file: string, line: int, class: string, method: string, exception: string}> */
@@ -36,6 +36,7 @@ class Extractor extends NodeVisitorAbstract
     private array $targetAttributes = ['ExceptionReason'];
 
     public function __construct(
+        /** @phpstan-ignore-next-line this is a stream */
         private readonly OutputInterface $output,
     ) {
     }
@@ -47,7 +48,6 @@ class Extractor extends NodeVisitorAbstract
     {
         $this->targetAttributes = $attributes;
     }
-
 
     public function setCurrentFile(string $file): void
     {
@@ -62,12 +62,12 @@ class Extractor extends NodeVisitorAbstract
     public function enterNode(Node $node): null
     {
         match (true) {
-            $node instanceof Namespace_ => $this->handleNamespace($node),
+            $node instanceof Namespace_                      => $this->handleNamespace($node),
             $node instanceof Class_, $node instanceof Trait_ => $this->handleClassLike($node),
-            $node instanceof ClassMethod => $this->handleClassMethod($node),
-            $node instanceof Function_ => $this->handleFunction($node),
-            $node instanceof Node\Stmt\Throw_, $node instanceof Node\Expr\Throw_ => $this->handleThrow($node),
-            default => null,
+            $node instanceof ClassMethod                     => $this->handleClassMethod($node),
+            $node instanceof Function_                       => $this->handleFunction($node),
+            $node instanceof Node\Expr\Throw_                => $this->handleThrow($node),
+            default                                          => null,
         };
 
         return null;
@@ -122,6 +122,11 @@ class Extractor extends NodeVisitorAbstract
         ];
     }
 
+    /**
+     * @param Node\FunctionLike $node
+     *
+     * @return array<array{code: string, technical: string, business: string}>
+     */
     private function extractAttributes(Node\FunctionLike $node): array
     {
         $attributes = [];
@@ -139,6 +144,7 @@ class Extractor extends NodeVisitorAbstract
                 }
 
                 if ($isTarget) {
+                    /** @var array<int|string, string> $args */
                     $args = [];
                     foreach ($attr->args as $arg) {
                         if ($arg->value instanceof Node\Scalar\String_) {
@@ -166,7 +172,7 @@ class Extractor extends NodeVisitorAbstract
 
     private function handleThrow(Node $node): void
     {
-        /** @var Node\Stmt\Throw_|Node\Expr\Throw_ $node */
+        /** @var Node\Expr\Throw_ $node */
         if ($node->expr instanceof StaticCall) {
             $class = $node->expr->class;
             $method = $node->expr->name;
@@ -198,7 +204,7 @@ class Extractor extends NodeVisitorAbstract
         }
     }
 
-    public function leaveNode(Node $node): void
+    public function leaveNode(Node $node): int|Node|array|null
     {
         if ($node instanceof Class_ || $node instanceof Trait_) {
             $this->currentClass = null;
@@ -211,13 +217,20 @@ class Extractor extends NodeVisitorAbstract
             $this->currentFunction = null;
             $this->currentMethodKey = null;
         }
+        return null;
     }
 
+    /**
+     * @return array<string, array{file: string, line: int, class: string, method: string, attributes: array<array{code: string, technical: string, business: string}>, throws: array<string>}>
+     */
     public function getResults(): array
     {
         return $this->methods;
     }
 
+    /**
+     * @return array<array{file: string, line: int, class: string, method: string, exception: string}>
+     */
     public function getDirectNewThrows(): array
     {
         return $this->directNewThrows;

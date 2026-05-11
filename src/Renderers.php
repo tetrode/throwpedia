@@ -9,7 +9,7 @@ use Nette\Neon\Neon;
 class Renderers
 {
     /**
-     * @param array<string, mixed> $model
+     * @param array<string, array{code?: string, business: string, technical: string, exception: string, thrown_from: array<string>}> $model
      */
     public static function toJson(array $model): string
     {
@@ -17,13 +17,16 @@ class Renderers
     }
 
     /**
-     * @param array<string, mixed> $model
+     * @param array<string, array{code?: string, business: string, technical: string, exception: string, thrown_from: array<string>}> $model
      */
     public static function toYaml(array $model): string
     {
         return Neon::encode($model, blockMode: true);
     }
 
+    /**
+     * @param array<string, array{code?: string, business: string, technical: string, exception: string, thrown_from: array<string>}> $model
+     */
     public static function toMarkdown(array $model): string
     {
         $md = "# Business Exceptions Catalog\n\n";
@@ -41,6 +44,9 @@ class Renderers
         return $md;
     }
 
+    /**
+     * @param array<string, array{code?: string, business: string, technical: string, exception: string, thrown_from: array<string>}> $model
+     */
     public static function toText(array $model): string
     {
         $text = "Business Exceptions Catalog\n";

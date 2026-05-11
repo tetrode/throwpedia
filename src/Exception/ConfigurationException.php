@@ -18,6 +18,6 @@ class ConfigurationException extends ThrowpediaException
 
     public static function FilePathNotGiven(): self
     {
-        return new self("Configuration file path not given, -f requires a file path");
+        return new self('Configuration file path not given, -f requires a file path');
     }
 }

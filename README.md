@@ -1,48 +1,48 @@
-# Exception Analysis Tool
+# Throwpedia - Exception Analysis Tool
 
-This tool performs static source-code analysis to extract and document business exceptions throughout the codebase.
+Throwpedia performs static source-code analysis to extract and document business exceptions throughout your PHP codebase. It bridges the gap between technical implementation and business logic by cataloging potential failure points.
 
 ## How it works
 
-The tool scans the `src/` directory for PHP files and identifies methods annotated with specific attributes (default: `#[ExceptionReason]`). It matches these attributes with `throw` statements in the same method to build a catalog of potential business failures.
+The tool scans your source directories for PHP files and identifies methods annotated with the `#[ExceptionReason]` attribute (or other custom attributes). It correlates these annotations with `throw` statements to build a comprehensive catalog of business-relevant exceptions.
 
-### Supported Patterns
+### Key Features
 
-- **Static Factory Methods**: It detects `throw SomeException::factory()` calls.
-- **Attributes**: It extracts metadata from `#[ExceptionReason('CODE', 'Technical Reason', 'Business Reason')]`.
-- **Direct New**: It can optionally detect and report direct `new SomeException()` usage.
+- **Semantic Cataloging**: Map technical exceptions to clear business and technical reasons using PHP 8 attributes.
+- **Multiple Reasons per Method**: Supports multiple `#[ExceptionReason]` attributes on a single method for complex logic.
+- **Static Factory Detection**: Identifies common patterns like `throw MyException::invalidData()`.
+- **Direct Instantiation Tracking**: Optionally tracks and includes direct `throw new \Exception()` calls.
+- **Data Deduplication**: Intelligent merging of identical reasons used across different parts of the application.
+- **Quality Assurance**: Warns you if the same exception code is used for different business or technical reasons, ensuring documentation consistency.
 
 ## Configuration
 
-The tool is configured via `tool/analyze-exception.neon`.
+Throwpedia is configured via `throwpedia.neon` in your project root.
 
 ```neon
-# Source directories to scan (one or more)
+# Source directories to scan
 source:
     - src
-    - tests
 
-# Attributes to look for
+# Attributes to look for (multiple supported)
 attributes:
     - ExceptionReason
-    - BusinessReason
 
-# Output files (extensions: .json, .yaml, .md)
+# Output files (supports .json, .yaml, .md)
 outputs:
-    - ./output/exceptions.json
-    - ./output/exceptions.yaml
-    - ./output/exceptions.md
+    - throwpedia/exceptions.json
+    - throwpedia/exceptions.yaml
+    - throwpedia/exceptions.md
 
-# Whether to include direct 'new' usage in the catalog
+# If true, direct 'new Exception()' is included in the catalog. 
+# If false, it is reported as a validation error.
 allowDirectNew: false
 ```
 
 ## Installation
 
-Before using Throwpedia, install the dependencies:
-
 ```bash
-composer install
+composer install tetrode/throwpedia
 ```
 
 ## Usage
@@ -50,29 +50,27 @@ composer install
 Run the analysis tool from the project root:
 
 ```bash
-php tool/analyze-exceptions.php
+vendor/bin/throwpedia
 ```
 
 ### Options
 
-- `-f <file>`: Specify a custom configuration file.
-- `-v`: Verbose mode (shows files being analyzed).
-- `-vv`: Very verbose mode (shows files and methods being analyzed).
+- `-f <file>`: Specify a custom configuration file path.
 
 ### First-time Setup
 
-If no configuration file is found, the tool will enter an interactive mode to help you create `tool/analyze-exception.neon`.
+If no configuration file is found, Throwpedia enters an **interactive setup mode** to help you generate your initial `throwpedia.neon` configuration.
 
-## Output
+## Quality & Validation
 
-The tool generates machine-readable and human-readable documentation:
+Throwpedia doesn't just extract data; it validates your documentation quality:
 
-- **JSON**: Structured data for integration with other tools.
-- **YAML**: Clean format for configuration or documentation.
-- **Markdown**: A formatted table suitable for project documentation.
+- **Missing Documentation**: Reports methods that throw exceptions but lack the required attributes.
+- **Inconsistent Codes**: Warns if the same code is used with different descriptions. In the output, these are automatically disambiguated (e.g., `code`, `code_1`).
+- **IDE Integration**: Validation issues are reported with project-relative paths and line numbers (e.g., `src/Service/MyService.php:42`), allowing you to click directly to the source in IDEs like PhpStorm.
 
-## Validation
+## Output Formats
 
-The tool reports:
-- Methods that throw exceptions but lack the required attribute.
-- Direct `new` usage (unless `allowDirectNew` is true, it is reported as a validation error).
+- **Markdown**: A clean table perfect for project documentation or GitHub wikis.
+- **JSON**: Machine-readable format for automated reporting or frontend integration.
+- **YAML**: Human-readable structured format for easy review.

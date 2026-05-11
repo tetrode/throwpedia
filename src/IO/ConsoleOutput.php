@@ -23,6 +23,6 @@ class ConsoleOutput implements OutputInterface
 
     public function warning(string $message): void
     {
-        echo "Warning: $message" . PHP_EOL;
+        fwrite(STDERR, "Warning: $message" . PHP_EOL);
     }
 }

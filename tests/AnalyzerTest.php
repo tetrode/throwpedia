@@ -29,15 +29,15 @@ class AnalyzerTest extends TestCase
     public function testAnalyzeAndBuildModel(): void
     {
         $code = <<<'PHP'
-<?php
-namespace App;
-class MyClass {
-    #[ExceptionReason(code: 'ERR_1', technical: 'Tech 1', business: 'Biz 1')]
-    public function method1() {
-        throw MyException::error();
-    }
-}
-PHP;
+            <?php
+            namespace App;
+            class MyClass {
+                #[ExceptionReason(code: 'ERR_1', technical: 'Tech 1', business: 'Biz 1')]
+                public function method1() {
+                    throw MyException::error();
+                }
+            }
+            PHP;
         file_put_contents($this->tempFile, $code);
 
         $analyzer = new Analyzer($this->output);
@@ -53,13 +53,13 @@ PHP;
     public function testValidationErrorsForMissingAttribute(): void
     {
         $code = <<<'PHP'
-<?php
-class MyClass {
-    public function methodWithoutAttr() {
-        throw MyException::error();
-    }
-}
-PHP;
+            <?php
+            class MyClass {
+                public function methodWithoutAttr() {
+                    throw MyException::error();
+                }
+            }
+            PHP;
         file_put_contents($this->tempFile, $code);
 
         $analyzer = new Analyzer($this->output);
@@ -73,13 +73,13 @@ PHP;
     public function testValidationErrorsForDirectNew(): void
     {
         $code = <<<'PHP'
-<?php
-class MyClass {
-    public function methodWithDirectNew() {
-        throw new \Exception('Oops');
-    }
-}
-PHP;
+            <?php
+            class MyClass {
+                public function methodWithDirectNew() {
+                    throw new \Exception('Oops');
+                }
+            }
+            PHP;
         file_put_contents($this->tempFile, $code);
 
         $analyzer = new Analyzer($this->output, ['allowDirectNew' => false]);
@@ -94,13 +94,13 @@ PHP;
     public function testAllowDirectNewInModel(): void
     {
         $code = <<<'PHP'
-<?php
-class MyClass {
-    public function methodWithDirectNew() {
-        throw new \Exception('Oops');
-    }
-}
-PHP;
+            <?php
+            class MyClass {
+                public function methodWithDirectNew() {
+                    throw new \Exception('Oops');
+                }
+            }
+            PHP;
         file_put_contents($this->tempFile, $code);
 
         $analyzer = new Analyzer($this->output, ['allowDirectNew' => true]);
@@ -112,7 +112,7 @@ PHP;
 
     public function testAnalyzeHandlesParseError(): void
     {
-        $code = "<?php invalid syntax here";
+        $code = '<?php invalid syntax here';
         file_put_contents($this->tempFile, $code);
 
         $bufferedOutput = new \Tetrode\Throwpedia\IO\BufferedOutput();
@@ -133,12 +133,12 @@ PHP;
     public function testAppendDirectNewThrowsWithDuplicates(): void
     {
         $code = <<<'PHP'
-<?php
-class MyClass {
-    public function m1() { throw new \Exception('1'); }
-    public function m2() { throw new \Exception('2'); }
-}
-PHP;
+            <?php
+            class MyClass {
+                public function m1() { throw new \Exception('1'); }
+                public function m2() { throw new \Exception('2'); }
+            }
+            PHP;
         file_put_contents($this->tempFile, $code);
         $analyzer = new Analyzer($this->output, ['allowDirectNew' => true]);
         $model = $analyzer->analyze([$this->tempFile]);
@@ -150,15 +150,15 @@ PHP;
     public function testAnalyzeWithMultipleAttributesOnSameMethod(): void
     {
         $code = <<<'PHP'
-<?php
-class MyClass {
-    #[ExceptionReason(code: 'ERR_A', technical: 'Tech A', business: 'Biz A')]
-    #[ExceptionReason(code: 'ERR_B', technical: 'Tech B', business: 'Biz B')]
-    public function methodWithTwoAttributes() {
-        throw MyException::error();
-    }
-}
-PHP;
+            <?php
+            class MyClass {
+                #[ExceptionReason(code: 'ERR_A', technical: 'Tech A', business: 'Biz A')]
+                #[ExceptionReason(code: 'ERR_B', technical: 'Tech B', business: 'Biz B')]
+                public function methodWithTwoAttributes() {
+                    throw MyException::error();
+                }
+            }
+            PHP;
         file_put_contents($this->tempFile, $code);
 
         $analyzer = new Analyzer($this->output);
@@ -178,15 +178,15 @@ PHP;
     public function testAnalyzeWithDuplicateAttributeCodesOnSameMethod(): void
     {
         $code = <<<'PHP'
-<?php
-class MyClass {
-    #[ExceptionReason(code: 'DUP', technical: 'Tech 1', business: 'Biz 1')]
-    #[ExceptionReason(code: 'DUP', technical: 'Tech 2', business: 'Biz 2')]
-    public function methodWithDuplicateCodes() {
-        throw MyException::error();
-    }
-}
-PHP;
+            <?php
+            class MyClass {
+                #[ExceptionReason(code: 'DUP', technical: 'Tech 1', business: 'Biz 1')]
+                #[ExceptionReason(code: 'DUP', technical: 'Tech 2', business: 'Biz 2')]
+                public function methodWithDuplicateCodes() {
+                    throw MyException::error();
+                }
+            }
+            PHP;
         file_put_contents($this->tempFile, $code);
 
         $analyzer = new Analyzer($this->output);
@@ -201,19 +201,39 @@ PHP;
         $this->assertEquals(['MyClass::methodWithDuplicateCodes'], $model['DUP']['thrown_from']);
     }
 
+    public function testAnalyzeTriggersWarningForDuplicateCodesWithDifferentReasons(): void
+    {
+        $code = <<<'PHP'
+            <?php
+            class MyClass {
+                #[ExceptionReason(code: 'DUP', technical: 'Tech 1', business: 'Biz 1')]
+                #[ExceptionReason(code: 'DUP', technical: 'Tech 2', business: 'Biz 2')]
+                public function method1() { throw E::e(); }
+            }
+            PHP;
+        file_put_contents($this->tempFile, $code);
+
+        $analyzer = new Analyzer($this->output);
+        $analyzer->analyze([$this->tempFile]);
+
+        $warnings = $analyzer->getValidationWarnings();
+        $this->assertCount(1, $warnings);
+        $this->assertStringContainsString("Duplicate code 'DUP' found with different reasons", $warnings[0]);
+    }
+
     public function testAnalyzeWithSameCodeOnDifferentMethods(): void
     {
         $code = <<<'PHP'
-<?php
-class ClassA {
-    #[ExceptionReason(code: 'SHARED', technical: 'Tech', business: 'Biz')]
-    public function methodA() { throw E::e(); }
-}
-class ClassB {
-    #[ExceptionReason(code: 'SHARED', technical: 'Tech', business: 'Biz')]
-    public function methodB() { throw E::e(); }
-}
-PHP;
+            <?php
+            class ClassA {
+                #[ExceptionReason(code: 'SHARED', technical: 'Tech', business: 'Biz')]
+                public function methodA() { throw E::e(); }
+            }
+            class ClassB {
+                #[ExceptionReason(code: 'SHARED', technical: 'Tech', business: 'Biz')]
+                public function methodB() { throw E::e(); }
+            }
+            PHP;
         file_put_contents($this->tempFile, $code);
 
         $analyzer = new Analyzer($this->output);
@@ -229,18 +249,18 @@ PHP;
     public function testAnalyzeWithMultipleAttributesAndMultipleThrows(): void
     {
         $code = <<<'PHP'
-<?php
-class MyClass {
-    #[ExceptionReason(code: 'E1', technical: 'T1', business: 'B1')]
-    #[ExceptionReason(code: 'E2', technical: 'T2', business: 'B2')]
-    public function multipleBoth() {
-        if (rand(0,1)) {
-             throw Exc1::error();
-        }
-        throw Exc2::error();
-    }
-}
-PHP;
+            <?php
+            class MyClass {
+                #[ExceptionReason(code: 'E1', technical: 'T1', business: 'B1')]
+                #[ExceptionReason(code: 'E2', technical: 'T2', business: 'B2')]
+                public function multipleBoth() {
+                    if (rand(0,1)) {
+                         throw Exc1::error();
+                    }
+                    throw Exc2::error();
+                }
+            }
+            PHP;
         file_put_contents($this->tempFile, $code);
 
         $analyzer = new Analyzer($this->output);

@@ -17,7 +17,6 @@ class ConfigLoaderTest extends TestCase
         $this->loader = new ConfigLoader(new NullOutput());
     }
 
-
     public function testGetConfigFile(): void
     {
         $this->assertNull($this->loader->getConfigFile(['bin/throwpedia']));
@@ -27,7 +26,7 @@ class ConfigLoaderTest extends TestCase
     public function testGetConfigFileMissingPath(): void
     {
         $this->expectException(\Tetrode\Throwpedia\Exception\ConfigurationException::class);
-        $this->expectExceptionMessage("-f requires a file path");
+        $this->expectExceptionMessage('-f requires a file path');
         $this->loader->getConfigFile(['bin/throwpedia', '-f']);
     }
 
@@ -68,15 +67,15 @@ class ConfigLoaderTest extends TestCase
 
         $tempDefaultConfigName = 'tp_default_' . uniqid() . '.neon';
         $loader = new ConfigLoader(new NullOutput(), $inputStream);
-        
+
         try {
             $config = $loader->load(null, $tempDefaultConfigName);
-            
+
             $this->assertEquals(['src_dir1', 'src_dir2'], $config['source']);
             $this->assertEquals(['MyException'], $config['attributes']);
             $this->assertTrue($config['allowDirectNew']);
             $this->assertContains('./out/exceptions.json', $config['outputs']);
-            
+
             $projectRoot = $loader->findProjectRoot();
             $expectedFile = $projectRoot . DIRECTORY_SEPARATOR . $tempDefaultConfigName;
             $this->assertFileExists($expectedFile);

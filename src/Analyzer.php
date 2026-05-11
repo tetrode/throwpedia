@@ -18,12 +18,18 @@ class Analyzer
     private bool $allowDirectNew = false;
     /** @var string[] */
     private array $targetAttributes = ['ExceptionReason'];
+    /** @var string[] */
+    private array $validationWarnings = [];
+    private string $projectRoot = '';
 
+    /**
+     * @param array<string, mixed> $config
+     */
     public function __construct(
         private readonly OutputInterface $output,
         array $config = []
     ) {
-        $this->parser = (new ParserFactory())->createForNewestSupportedVersion();
+        $this->parser = new ParserFactory()->createForNewestSupportedVersion();
         $this->extractor = new Extractor($this->output);
 
         if (isset($config['attributes'])) {
@@ -34,11 +40,15 @@ class Analyzer
         if (isset($config['allowDirectNew'])) {
             $this->allowDirectNew = (bool)$config['allowDirectNew'];
         }
-    }
 
+        if (isset($config['projectRoot'])) {
+            $this->projectRoot = (string)$config['projectRoot'];
+        }
+    }
 
     /**
      * @param array<string> $files
+     *
      * @return array<string, mixed>
      */
     public function analyze(array $files): array
@@ -77,11 +87,17 @@ class Analyzer
         );
     }
 
+    /**
+     * @param array<string, array{file: string, line: int, class: string, method: string, attributes: array<array{code: string, technical: string, business: string}>, throws: array<string>}> $rawResults
+     * @param array<array{file: string, line: int, class: string, method: string, exception: string}> $directNew
+     *
+     * @return array<string, array{code?: string, business: string, technical: string, exception: string, thrown_from: array<string>}>
+     */
     private function buildModel(array $rawResults, array $directNew): array
     {
         $model = [];
         foreach ($rawResults as $methodData) {
-            $location = sprintf('%s::%s', $methodData['class'], $methodData['method']);
+            $location = \sprintf('%s::%s', $methodData['class'], $methodData['method']);
             $methodExceptions = array_unique($methodData['throws']);
             $exceptionsStr = implode(', ', $methodExceptions) ?: 'unknown';
 
@@ -115,6 +131,15 @@ class Analyzer
                     $uniqueKey = $code;
                     $counter = 1;
                     while (isset($model[$uniqueKey])) {
+                        if (1 === $counter) {
+                            $this->validationWarnings[] = \sprintf(
+                                "Duplicate code '%s' found with different reasons at %s:%d (%s).",
+                                $code,
+                                $this->getDisplayPath($methodData['file']),
+                                $methodData['line'],
+                                $location
+                            );
+                        }
                         $uniqueKey = $code . '_' . $counter++;
                     }
 
@@ -154,7 +179,7 @@ class Analyzer
                 $code = $originalCode . '_' . $counter++;
             }
 
-            $location = sprintf('%s::%s', $throw['class'], $throw['method']);
+            $location = \sprintf('%s::%s', $throw['class'], $throw['method']);
             $model[$code] = [
                 'business'    => 'Direct instantiation of ' . $throw['exception'],
                 'technical'   => 'Thrown from ' . $location,
@@ -164,13 +189,41 @@ class Analyzer
         }
     }
 
+    /**
+     * @return string[]
+     */
     public function getValidationErrors(): array
+    {
+        return $this->getValidationErrorsInternal();
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getValidationWarnings(): array
+    {
+        return $this->validationWarnings;
+    }
+
+    private function getDisplayPath(string $file): string
+    {
+        if ($this->projectRoot && str_starts_with($file, $this->projectRoot)) {
+            return ltrim(substr($file, \strlen($this->projectRoot)), DIRECTORY_SEPARATOR);
+        }
+
+        return $file;
+    }
+
+    /**
+     * @return string[]
+     */
+    private function getValidationErrorsInternal(): array
     {
         $errors = [];
         foreach ($this->extractor->getDirectNewThrows() as $throw) {
-            $errors[] = sprintf(
+            $errors[] = \sprintf(
                 "Direct 'new' usage at %s:%d in %s::%s for %s",
-                $throw['file'],
+                $this->getDisplayPath($throw['file']),
                 $throw['line'],
                 $throw['class'],
                 $throw['method'],
@@ -180,10 +233,10 @@ class Analyzer
 
         foreach ($this->extractor->getResults() as $methodData) {
             if (!empty($methodData['throws']) && empty($methodData['attributes'])) {
-                $errors[] = sprintf(
-                    "Missing #[%s] at %s:%d for method %s::%s",
+                $errors[] = \sprintf(
+                    'Missing #[%s] at %s:%d for method %s::%s',
                     implode('|', $this->targetAttributes),
-                    $methodData['file'],
+                    $this->getDisplayPath($methodData['file']),
                     $methodData['line'],
                     $methodData['class'],
                     $methodData['method']

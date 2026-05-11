@@ -28,14 +28,14 @@ class Throwpedia
         $projectRoot = $configLoader->findProjectRoot();
 
         $files = $this->collectFiles($config['source'] ?? ['src'], $projectRoot);
-        $analyzer = $this->initAnalyzer($config);
+        $analyzer = $this->initAnalyzer($config, $projectRoot);
 
         $model = $analyzer->analyze($files);
         $this->processResults($model, $config['outputs'] ?? null, $projectRoot);
 
-        $this->output->writeln("Analysis complete.");
+        $this->output->writeln('Analysis complete.');
 
-        $this->displayValidationErrors($analyzer->getValidationErrors());
+        $this->displayValidationIssues($analyzer);
     }
 
     /**
@@ -76,13 +76,14 @@ class Throwpedia
     /**
      * @param array<string, mixed> $config
      */
-    private function initAnalyzer(array $config): Analyzer
+    private function initAnalyzer(array $config, string $projectRoot): Analyzer
     {
         $analyzer = new Analyzer(
             $this->output,
             [
                 'attributes'     => $config['attributes'] ?? ['ExceptionReason'],
                 'allowDirectNew' => $config['allowDirectNew'] ?? false,
+                'projectRoot'    => $projectRoot,
             ]
         );
 
@@ -134,18 +135,28 @@ class Throwpedia
         };
     }
 
-    /**
-     * @param array<string> $errors
-     */
-    private function displayValidationErrors(array $errors): void
+    private function displayValidationIssues(Analyzer $analyzer): void
     {
+        $errors = $analyzer->getValidationErrors();
+        $warnings = $analyzer->getValidationWarnings();
+
+        if (empty($errors) && empty($warnings)) {
+            $this->output->writeln("\nNo validation issues found.");
+            return;
+        }
+
         if (!empty($errors)) {
             $this->output->writeln("\nValidation Errors found:");
             foreach ($errors as $error) {
-                $this->output->writeln("- $error");
+                $this->output->error($error);
             }
-        } else {
-            $this->output->writeln("\nNo validation errors found.");
+        }
+
+        if (!empty($warnings)) {
+            $this->output->writeln("\nValidation Warnings found:");
+            foreach ($warnings as $warning) {
+                $this->output->warning($warning);
+            }
         }
     }
 }

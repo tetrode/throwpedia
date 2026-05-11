@@ -9,13 +9,14 @@ use Tetrode\Throwpedia\Renderers;
 
 class RenderersTest extends TestCase
 {
+    /** @var array<string, array{code?: string, business: string, technical: string, exception: string, thrown_from: array<string>}> */
     private array $model = [
         'ERR_001' => [
-            'business' => 'User not found',
-            'technical' => 'Database query returned empty result',
-            'exception' => 'UserNotFoundException',
-            'thrown_from' => ['UserRepository::get', 'UserService::find']
-        ]
+            'business'    => 'User not found',
+            'technical'   => 'Database query returned empty result',
+            'exception'   => 'UserNotFoundException',
+            'thrown_from' => ['UserRepository::get', 'UserService::find'],
+        ],
     ];
 
     public function testToJson(): void
@@ -51,11 +52,11 @@ class RenderersTest extends TestCase
     {
         $model = [
             'ERR_PIPE' => [
-                'business' => 'Business | with pipe',
-                'technical' => 'Technical | with pipe',
-                'exception' => 'Ex',
+                'business'    => 'Business | with pipe',
+                'technical'   => 'Technical | with pipe',
+                'exception'   => 'Ex',
                 'thrown_from' => ['Loc'],
-            ]
+            ],
         ];
         $md = Renderers::toMarkdown($model);
         $this->assertStringContainsString('Business \| with pipe', $md);

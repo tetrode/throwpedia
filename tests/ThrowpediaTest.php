@@ -27,7 +27,9 @@ class ThrowpediaTest extends TestCase
 
     private function removeDir(string $dir): void
     {
-        if (!is_dir($dir)) return;
+        if (!is_dir($dir)) {
+            return;
+        }
         $files = array_diff(scandir($dir), ['.', '..']);
         foreach ($files as $file) {
             $path = $dir . DIRECTORY_SEPARATOR . $file;
@@ -39,22 +41,22 @@ class ThrowpediaTest extends TestCase
     public function testRunSmokeTest(): void
     {
         $code = <<<'PHP'
-<?php
-class TestClass {
-    #[ExceptionReason('CODE1', 'Tech', 'Biz')]
-    public function test() {
-        throw MyEx::fail();
-    }
-}
-PHP;
+            <?php
+            class TestClass {
+                #[ExceptionReason('CODE1', 'Tech', 'Biz')]
+                public function test() {
+                    throw MyEx::fail();
+                }
+            }
+            PHP;
         file_put_contents($this->tempDir . '/src/TestClass.php', $code);
-        
+
         $config = <<<'NEON'
-source:
-    - src
-outputs:
-    - output.json
-NEON;
+            source:
+                - src
+            outputs:
+                - output.json
+            NEON;
         file_put_contents($this->tempDir . '/throwpedia.neon', $config);
 
         // We need to change CWD because ConfigLoader::findProjectRoot and collectFiles use it or relative paths
@@ -69,7 +71,7 @@ NEON;
 
             $this->assertStringContainsString('Analysis complete.', $output);
             $this->assertFileExists($this->tempDir . '/output.json');
-            
+
             $json = json_decode(file_get_contents($this->tempDir . '/output.json'), true);
             $this->assertArrayHasKey('CODE1', $json);
         } finally {
@@ -80,9 +82,9 @@ NEON;
     public function testSourceNotFoundWarning(): void
     {
         $config = <<<'NEON'
-source:
-    - non_existent_dir
-NEON;
+            source:
+                - non_existent_dir
+            NEON;
         file_put_contents($this->tempDir . '/throwpedia.neon', $config);
         $oldCwd = getcwd();
         chdir($this->tempDir);
@@ -91,8 +93,8 @@ NEON;
             $bufferedOutput = new BufferedOutput();
             $throwpedia = new Throwpedia($bufferedOutput);
             $throwpedia->run(['bin/throwpedia', '-f', 'throwpedia.neon']);
-            
-            $this->assertStringContainsString("Warning: Source directory or file", $bufferedOutput->fetch());
+
+            $this->assertStringContainsString('Warning: Source directory or file', $bufferedOutput->fetch());
         } finally {
             chdir($oldCwd);
         }
@@ -101,11 +103,11 @@ NEON;
     public function testUnknownOutputExtensionWarning(): void
     {
         $config = <<<'NEON'
-source:
-    - src
-outputs:
-    - output.unknown
-NEON;
+            source:
+                - src
+            outputs:
+                - output.unknown
+            NEON;
         file_put_contents($this->tempDir . '/throwpedia.neon', $config);
         $oldCwd = getcwd();
         chdir($this->tempDir);
@@ -114,7 +116,7 @@ NEON;
             $bufferedOutput = new BufferedOutput();
             $throwpedia = new Throwpedia($bufferedOutput);
             $throwpedia->run(['bin/throwpedia', '-f', 'throwpedia.neon']);
-            
+
             $this->assertStringContainsString("Warning: Unknown output extension 'unknown'", $bufferedOutput->fetch());
         } finally {
             chdir($oldCwd);
@@ -128,11 +130,11 @@ NEON;
         file_put_contents($this->tempDir . '/src/SubDir/SubClass.php', $code);
 
         $config = <<<'NEON'
-source:
-    - src
-outputs:
-    - out.json
-NEON;
+            source:
+                - src
+            outputs:
+                - out.json
+            NEON;
         file_put_contents($this->tempDir . '/throwpedia.neon', $config);
         $oldCwd = getcwd();
         chdir($this->tempDir);
@@ -141,7 +143,7 @@ NEON;
             $bufferedOutput = new BufferedOutput();
             $throwpedia = new Throwpedia($bufferedOutput);
             $throwpedia->run(['bin/throwpedia', '-f', 'throwpedia.neon']);
-            
+
             $this->assertFileExists($this->tempDir . '/out.json');
             $json = json_decode(file_get_contents($this->tempDir . '/out.json'), true);
             $this->assertArrayHasKey('SUB', $json);
@@ -156,11 +158,11 @@ NEON;
         file_put_contents($this->tempDir . '/Single.php', $code);
 
         $config = <<<'NEON'
-source:
-    - Single.php
-outputs:
-    - single.json
-NEON;
+            source:
+                - Single.php
+            outputs:
+                - single.json
+            NEON;
         file_put_contents($this->tempDir . '/throwpedia.neon', $config);
         $oldCwd = getcwd();
         chdir($this->tempDir);
@@ -169,7 +171,7 @@ NEON;
             $bufferedOutput = new BufferedOutput();
             $throwpedia = new Throwpedia($bufferedOutput);
             $throwpedia->run(['bin/throwpedia', '-f', 'throwpedia.neon']);
-            
+
             $json = json_decode(file_get_contents($this->tempDir . '/single.json'), true);
             $this->assertArrayHasKey('SINGLE', $json);
         } finally {
@@ -180,11 +182,11 @@ NEON;
     public function testNestedOutputDirectory(): void
     {
         $config = <<<'NEON'
-source:
-    - src
-outputs:
-    - nested/dir/output.json
-NEON;
+            source:
+                - src
+            outputs:
+                - nested/dir/output.json
+            NEON;
         file_put_contents($this->tempDir . '/throwpedia.neon', $config);
         $oldCwd = getcwd();
         chdir($this->tempDir);
@@ -193,7 +195,7 @@ NEON;
             $bufferedOutput = new BufferedOutput();
             $throwpedia = new Throwpedia($bufferedOutput);
             $throwpedia->run(['bin/throwpedia', '-f', 'throwpedia.neon']);
-            
+
             $this->assertDirectoryExists($this->tempDir . '/nested/dir');
             $this->assertFileExists($this->tempDir . '/nested/dir/output.json');
         } finally {
@@ -207,11 +209,11 @@ NEON;
         file_put_contents($this->tempDir . '/src/Test.php', $code);
 
         $config = <<<'NEON'
-source:
-    - src
-outputs:
-    - output.JSON
-NEON;
+            source:
+                - src
+            outputs:
+                - output.JSON
+            NEON;
         file_put_contents($this->tempDir . '/throwpedia.neon', $config);
         $oldCwd = getcwd();
         chdir($this->tempDir);
@@ -220,7 +222,7 @@ NEON;
             $bufferedOutput = new BufferedOutput();
             $throwpedia = new Throwpedia($bufferedOutput);
             $throwpedia->run(['bin/throwpedia', '-f', 'throwpedia.neon']);
-            
+
             $this->assertFileExists($this->tempDir . '/output.JSON');
         } finally {
             chdir($oldCwd);

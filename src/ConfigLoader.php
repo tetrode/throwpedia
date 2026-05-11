@@ -56,11 +56,10 @@ class ConfigLoader
         return $this->interactiveSetup($defaultConfigFile);
     }
 
-
     /**
      * @param string[] $argv
      */
-    #[ExceptionReason('load', 'configuration file not found', 'configuration file is missing')]
+    #[ExceptionReason('load', 'configuration file not found', 'configuration file is missing.')]
     public function getConfigFile(array $argv): ?string
     {
         $count = \count($argv);
@@ -131,14 +130,14 @@ class ConfigLoader
 
     public function findProjectRoot(): string
     {
-        $cwd = \getcwd();
+        $cwd = getcwd();
         if (false !== $cwd && file_exists($cwd . DIRECTORY_SEPARATOR . 'composer.json')) {
             return $cwd;
         }
 
         $dir = __DIR__;
         $lastFound = null;
-        while ($dir !== DIRECTORY_SEPARATOR) {
+        while (DIRECTORY_SEPARATOR !== $dir) {
             if (file_exists($dir . DIRECTORY_SEPARATOR . 'composer.json')) {
                 if (file_exists($dir . DIRECTORY_SEPARATOR . 'vendor/tetrode/throwpedia')) {
                     return $dir;
