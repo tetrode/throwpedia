@@ -37,6 +37,20 @@ To run this example:
 ./bin/throwpedia -f examples/03-mixed-flow/throwpedia.neon
 ```
 
+## Flow 04: Custom Fields Flow
+Located in `04-custom-fields-flow/`.
+
+This flow demonstrates the power of the new configurable architecture:
+- Custom attribute `#[CustomReason]` instead of the default `#[ExceptionReason]`.
+- Custom fields (`code`, `severity`, `ticket`) defined in `throwpedia.neon`.
+- Automatic validation of the custom attribute class.
+- Dynamic generation of documentation with custom labels.
+
+To run this example:
+```bash
+./bin/throwpedia -f examples/04-custom-fields-flow/throwpedia.neon
+```
+
 ## Running throwpedia
 You can run throwpedia from the project root using the provided `bin/throwpedia` script.
 Make sure you have dependencies installed via `composer install`.

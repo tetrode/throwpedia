@@ -8,6 +8,12 @@ source:
 attributes:
     - ExceptionReason
 
+# Attribute Fields (optional, defaults to code, technicalReason, businessReason)
+fields:
+    code: Code
+    technicalReason: Technical Reason
+    businessReason: Business Reason
+
 # Output files. Remove the ones that you do not need
 outputs:
     - ./output/exceptions.json

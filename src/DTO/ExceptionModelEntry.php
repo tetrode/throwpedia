@@ -7,14 +7,13 @@ namespace Tetrode\Throwpedia\DTO;
 readonly class ExceptionModelEntry
 {
     /**
+     * @param array<string, string> $values
      * @param string[] $thrown_from
      */
     public function __construct(
-        public string $business,
-        public string $technical,
+        public array $values,
         public string $exception,
         public array $thrown_from,
-        public ?string $code = null,
     ) {
     }
 }

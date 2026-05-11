@@ -1,0 +1,33 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Service;
+
+use App\Attribute\CustomReason;
+use App\Exception\OrderException;
+
+class OrderService
+{
+    #[CustomReason(
+        code: 'OUT_OF_STOCK',
+        severity: 'critical',
+        ticket: 'JIRA-123'
+    )]
+    public function checkout(string $sku): void
+    {
+        // ... logic
+        throw OrderException::insufficientStock($sku);
+    }
+
+    #[CustomReason(
+        code: 'INVALID_COUPON',
+        severity: 'low',
+        ticket: 'JIRA-456'
+    )]
+    public function applyCoupon(string $coupon): void
+    {
+        // ... logic
+        throw OrderException::invalidCoupon($coupon);
+    }
+}

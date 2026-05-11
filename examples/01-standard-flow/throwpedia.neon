@@ -5,6 +5,11 @@ source:
 attributes:
     - ExceptionReason
 
+fields:
+    code: Code
+    technicalReason: Technical Reason
+    businessReason: Business Reason
+
 outputs:
     - examples/01-standard-flow/output/exceptions.json
     - examples/01-standard-flow/output/exceptions.md

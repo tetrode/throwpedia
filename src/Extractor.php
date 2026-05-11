@@ -14,10 +14,12 @@ use PhpParser\Node\Stmt\Function_;
 use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\Node\Stmt\Trait_;
 use PhpParser\NodeVisitorAbstract;
+use Tetrode\Throwpedia\DTO\AttributeField;
 use Tetrode\Throwpedia\DTO\DirectNewThrow;
 use Tetrode\Throwpedia\DTO\ExceptionAttribute;
 use Tetrode\Throwpedia\DTO\ExtractionResults;
 use Tetrode\Throwpedia\DTO\MethodAnalysisResult;
+use Tetrode\Throwpedia\DTO\ValidationIssue;
 use Tetrode\Throwpedia\IO\OutputInterface;
 
 class Extractor extends NodeVisitorAbstract
@@ -34,10 +36,16 @@ class Extractor extends NodeVisitorAbstract
     /** @var DirectNewThrow[] */
     private array $directNewThrows = [];
 
+    /** @var ValidationIssue[] */
+    private array $validationIssues = [];
+
     private string $currentFile = '';
 
     /** @var array<string> */
     private array $targetAttributes = ['ExceptionReason'];
+
+    /** @var AttributeField[] */
+    private array $fields = [];
 
     public function __construct(
         /** @phpstan-ignore-next-line this is a stream */
@@ -51,6 +59,14 @@ class Extractor extends NodeVisitorAbstract
     public function setTargetAttributes(array $attributes): void
     {
         $this->targetAttributes = $attributes;
+    }
+
+    /**
+     * @param AttributeField[] $fields
+     */
+    public function setFields(array $fields): void
+    {
+        $this->fields = $fields;
     }
 
     public function setCurrentFile(string $file): void
@@ -86,6 +102,55 @@ class Extractor extends NodeVisitorAbstract
     {
         /** @var Class_|Trait_ $node */
         $this->currentClass = $node->name ? $node->name->toString() : null;
+
+        if ($node instanceof Class_) {
+            $fullClassName = ($this->currentNamespace ? $this->currentNamespace . '\\' : '') . ($this->currentClass ?? '');
+            $shortName = $node->name ? $node->name->toString() : '';
+
+            $isAttribute = false;
+            foreach ($this->targetAttributes as $target) {
+                if ($shortName === $target || $fullClassName === $target) {
+                    $isAttribute = true;
+                    break;
+                }
+            }
+
+            if ($isAttribute) {
+                $this->validateAttributeClass($node);
+            }
+        }
+    }
+
+    private function validateAttributeClass(Class_ $node): void
+    {
+        $constructor = $node->getMethod('__construct');
+        if (!$constructor || empty($this->fields)) {
+            return;
+        }
+
+        $params = $constructor->params;
+        foreach ($this->fields as $index => $field) {
+            $param = $params[$index] ?? null;
+            if (!$param) {
+                $this->validationIssues[] = new ValidationIssue(
+                    message: \sprintf("Attribute class '%s' is missing parameter '%s' at position %d", $node->name->toString(), $field->name, $index),
+                    severity: ValidationIssue::SEVERITY_ERROR,
+                    file: $this->currentFile,
+                    line: $node->getLine()
+                );
+                continue;
+            }
+
+            $paramName = $param->var instanceof Node\Expr\Variable ? (string)$param->var->name : '';
+            if ($paramName !== $field->name) {
+                $this->validationIssues[] = new ValidationIssue(
+                    message: \sprintf("Attribute class '%s' parameter at position %d should be named '%s', found '%s'", $node->name->toString(), $index, $field->name, $paramName),
+                    severity: ValidationIssue::SEVERITY_WARNING,
+                    file: $this->currentFile,
+                    line: $node->getLine()
+                );
+            }
+        }
     }
 
     private function handleClassMethod(ClassMethod $node): void
@@ -159,12 +224,20 @@ class Extractor extends NodeVisitorAbstract
                         }
                     }
 
-                    if (isset($args[0]) || isset($args['code'])) {
-                        $attributes[] = new ExceptionAttribute(
-                            code: (string)($args['code'] ?? $args[0] ?? 'UNKNOWN'),
-                            technical: (string)($args['technicalReason'] ?? $args['technical'] ?? $args[1] ?? ''),
-                            business: (string)($args['businessReason'] ?? $args['business'] ?? $args[2] ?? ''),
-                        );
+                    if (!empty($this->fields)) {
+                        $values = [];
+                        foreach ($this->fields as $index => $field) {
+                            $values[$field->name] = (string)($args[$field->name] ?? $args[$index] ?? '');
+                        }
+                        $attributes[] = new ExceptionAttribute($values);
+                    } else {
+                        if (isset($args[0]) || isset($args['code'])) {
+                            $attributes[] = new ExceptionAttribute([
+                                'code' => (string)($args['code'] ?? $args[0] ?? 'UNKNOWN'),
+                                'technicalReason' => (string)($args['technicalReason'] ?? $args['technical'] ?? $args[1] ?? ''),
+                                'businessReason' => (string)($args['businessReason'] ?? $args['business'] ?? $args[2] ?? ''),
+                            ]);
+                        }
                     }
                 }
             }
@@ -227,7 +300,7 @@ class Extractor extends NodeVisitorAbstract
 
     public function getExtractionResults(): ExtractionResults
     {
-        return new ExtractionResults($this->methods, $this->directNewThrows);
+        return new ExtractionResults($this->methods, $this->directNewThrows, $this->validationIssues);
     }
 
     /**

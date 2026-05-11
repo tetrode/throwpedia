@@ -35,7 +35,7 @@ class Throwpedia
         $analyzer = $this->initAnalyzer($config);
 
         $catalog = $analyzer->analyze($files);
-        $this->processResults($catalog, $config->outputs, $config->projectRoot);
+        $this->processResults($catalog, $config->outputs, $config->projectRoot, $config->fields);
 
         $this->output->writeln('Analysis complete.');
 
@@ -83,6 +83,7 @@ class Throwpedia
             $this->output,
             new AnalyzerConfig(
                 attributes: $config->attributes,
+                fields: $config->fields,
                 allowDirectNew: $config->allowDirectNew,
                 projectRoot: $config->projectRoot,
             )
@@ -91,11 +92,12 @@ class Throwpedia
 
     /**
      * @param OutputTarget[] $outputs
+     * @param DTO\AttributeField[] $fields
      */
-    private function processResults(ExceptionCatalog $catalog, array $outputs, string $projectRoot): void
+    private function processResults(ExceptionCatalog $catalog, array $outputs, string $projectRoot, array $fields): void
     {
         if (empty($outputs)) {
-            $this->output->write(Renderers::toText($catalog));
+            $this->output->write(Renderers::toText($catalog, $fields));
             return;
         }
 
@@ -107,7 +109,7 @@ class Throwpedia
                 mkdir($dir, 0o777, true);
             }
 
-            $content = $this->renderModel($catalog, $target->extension);
+            $content = $this->renderModel($catalog, $target->extension, $fields);
 
             if (null !== $content) {
                 file_put_contents($fullPath, $content);
@@ -118,12 +120,15 @@ class Throwpedia
         }
     }
 
-    private function renderModel(ExceptionCatalog $catalog, string $extension): ?string
+    /**
+     * @param AttributeField[] $fields
+     */
+    private function renderModel(ExceptionCatalog $catalog, string $extension, array $fields): ?string
     {
         return match (strtolower($extension)) {
             'json'           => Renderers::toJson($catalog),
             'yaml', 'yml'    => Renderers::toYaml($catalog),
-            'md', 'markdown' => Renderers::toMarkdown($catalog),
+            'md', 'markdown' => Renderers::toMarkdown($catalog, $fields),
             default          => null,
         };
     }

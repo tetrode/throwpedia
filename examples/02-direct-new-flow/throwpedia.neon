@@ -2,6 +2,14 @@
 source:
     - examples/02-direct-new-flow/src
 
+attributes:
+    - ExceptionReason
+
+fields:
+    code: Code
+    technicalReason: Technical Reason
+    businessReason: Business Reason
+
 outputs:
     - examples/02-direct-new-flow/output/exceptions.yaml
 

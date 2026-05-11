@@ -37,6 +37,7 @@ class Analyzer
 
         $this->targetAttributes = $this->config->attributes;
         $this->extractor->setTargetAttributes($this->targetAttributes);
+        $this->extractor->setFields($this->config->fields);
 
         $this->allowDirectNew = $this->config->allowDirectNew;
     }
@@ -81,6 +82,14 @@ class Analyzer
 
     private function buildModel(ExtractionResults $results): ExceptionCatalog
     {
+        $codeField = 'code';
+        foreach ($this->config->fields as $field) {
+            if ($field->isCode) {
+                $codeField = $field->name;
+                break;
+            }
+        }
+
         /** @var array<string, ExceptionModelEntry> $model */
         $model = [];
         foreach ($results->methods as $methodData) {
@@ -89,14 +98,11 @@ class Analyzer
             $exceptionsStr = implode(', ', $methodExceptions) ?: 'unknown';
 
             foreach ($methodData->attributes as $attr) {
-                $code = $attr->code;
-                $tech = $attr->technical;
-                $biz = $attr->business;
+                $code = $attr->values[$codeField] ?? 'UNKNOWN';
 
                 $foundKey = null;
                 foreach ($model as $existingKey => $entry) {
-                    $entryCode = $entry->code ?? $existingKey;
-                    if ($entryCode === $code && $entry->technical === $tech && $entry->business === $biz) {
+                    if ($entry->values === $attr->values) {
                         $foundKey = $existingKey;
                         break;
                     }
@@ -116,11 +122,9 @@ class Analyzer
                         }
                     }
                     $model[$foundKey] = new ExceptionModelEntry(
-                        business: $entry->business,
-                        technical: $entry->technical,
+                        values: $entry->values,
                         exception: implode(', ', array_filter($existingExceptions)),
                         thrown_from: $newThrownFrom,
-                        code: $entry->code
                     );
                 } else {
                     $uniqueKey = $code;
@@ -140,11 +144,9 @@ class Analyzer
                     }
 
                     $model[$uniqueKey] = new ExceptionModelEntry(
-                        business: $biz,
-                        technical: $tech,
+                        values: $attr->values,
                         exception: $exceptionsStr,
                         thrown_from: [$location],
-                        code: $code,
                     );
                 }
             }
@@ -178,9 +180,22 @@ class Analyzer
             }
 
             $location = \sprintf('%s::%s', $throw->class, $throw->method);
+
+            $values = [];
+            foreach ($this->config->fields as $field) {
+                if ($field->isCode) {
+                    $values[$field->name] = $code;
+                } elseif (str_contains(strtolower($field->label), 'business')) {
+                    $values[$field->name] = 'Direct instantiation of ' . $throw->exception;
+                } elseif (str_contains(strtolower($field->label), 'technical')) {
+                    $values[$field->name] = 'Thrown from ' . $location;
+                } else {
+                    $values[$field->name] = '';
+                }
+            }
+
             $model[$code] = new ExceptionModelEntry(
-                business: 'Direct instantiation of ' . $throw->exception,
-                technical: 'Thrown from ' . $location,
+                values: $values,
                 exception: $throw->exception,
                 thrown_from: [$location],
             );
@@ -192,18 +207,20 @@ class Analyzer
      */
     public function getValidationIssues(): array
     {
-        $issues = $this->validationIssues;
         $results = $this->extractor->getExtractionResults();
+        $issues = array_merge($this->validationIssues, $results->validationIssues);
 
-        foreach ($results->directNewThrows as $throw) {
-            $issues[] = new ValidationIssue(
-                message: \sprintf("Direct 'new' usage for %s", $throw->exception),
-                severity: ValidationIssue::SEVERITY_ERROR,
-                file: $throw->file,
-                line: $throw->line,
-                class: $throw->class,
-                method: $throw->method
-            );
+        if (!$this->allowDirectNew) {
+            foreach ($results->directNewThrows as $throw) {
+                $issues[] = new ValidationIssue(
+                    message: \sprintf("Direct 'new' usage for %s", $throw->exception),
+                    severity: ValidationIssue::SEVERITY_ERROR,
+                    file: $throw->file,
+                    line: $throw->line,
+                    class: $throw->class,
+                    method: $throw->method
+                );
+            }
         }
 
         foreach ($results->methods as $methodData) {

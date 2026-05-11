@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tetrode\Throwpedia\Tests;
 
 use PHPUnit\Framework\TestCase;
+use Tetrode\Throwpedia\DTO\AttributeField;
 use Tetrode\Throwpedia\DTO\ExceptionCatalog;
 use Tetrode\Throwpedia\DTO\ExceptionModelEntry;
 use Tetrode\Throwpedia\Renderers;
@@ -14,12 +15,23 @@ class RenderersTest extends TestCase
     /** @var array<string, ExceptionModelEntry> */
     private array $model;
 
+    /** @var AttributeField[] */
+    private array $fields;
+
     protected function setUp(): void
     {
+        $this->fields = [
+            new AttributeField('code', 'Code', true),
+            new AttributeField('technical', 'Technical'),
+            new AttributeField('business', 'Business'),
+        ];
         $this->model = [
             'ERR_001' => new ExceptionModelEntry(
-                business: 'User not found',
-                technical: 'Database query returned empty result',
+                values: [
+                    'code' => 'ERR_001',
+                    'business' => 'User not found',
+                    'technical' => 'Database query returned empty result',
+                ],
                 exception: 'UserNotFoundException',
                 thrown_from: ['UserRepository::get', 'UserService::find'],
             ),
@@ -32,7 +44,7 @@ class RenderersTest extends TestCase
         $this->assertJson($json);
         $decoded = json_decode($json, true);
         $this->assertArrayHasKey('ERR_001', $decoded);
-        $this->assertEquals('User not found', $decoded['ERR_001']['business']);
+        $this->assertEquals('User not found', $decoded['ERR_001']['values']['business']);
     }
 
     public function testToYaml(): void
@@ -48,7 +60,7 @@ class RenderersTest extends TestCase
 
     public function testToMarkdown(): void
     {
-        $md = Renderers::toMarkdown(new ExceptionCatalog($this->model));
+        $md = Renderers::toMarkdown(new ExceptionCatalog($this->model), $this->fields);
         $this->assertStringContainsString('# Business Exceptions Catalog', $md);
         $this->assertStringContainsString('ERR_001', $md);
         $this->assertStringContainsString('User not found', $md);
@@ -60,23 +72,26 @@ class RenderersTest extends TestCase
     {
         $model = [
             'ERR_PIPE' => new ExceptionModelEntry(
-                business: 'Business | with pipe',
-                technical: 'Technical | with pipe',
+                values: [
+                    'code' => 'ERR_PIPE',
+                    'business' => 'Business | with pipe',
+                    'technical' => 'Technical | with pipe',
+                ],
                 exception: 'Ex',
                 thrown_from: ['Loc'],
             ),
         ];
-        $md = Renderers::toMarkdown(new ExceptionCatalog($model));
+        $md = Renderers::toMarkdown(new ExceptionCatalog($model), $this->fields);
         $this->assertStringContainsString('Business \| with pipe', $md);
         $this->assertStringContainsString('Technical \| with pipe', $md);
     }
 
     public function testToText(): void
     {
-        $text = Renderers::toText(new ExceptionCatalog($this->model));
+        $text = Renderers::toText(new ExceptionCatalog($this->model), $this->fields);
         $this->assertStringContainsString('Business Exceptions Catalog', $text);
         $this->assertStringContainsString('[ERR_001]', $text);
-        $this->assertStringContainsString('Business:  User not found', $text);
+        $this->assertStringContainsString('Business: User not found', $text);
         $this->assertStringContainsString('Technical: Database query returned empty result', $text);
         $this->assertStringContainsString('Exception: UserNotFoundException', $text);
         $this->assertStringContainsString('- UserRepository::get', $text);

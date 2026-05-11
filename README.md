@@ -35,6 +35,14 @@ source:
 attributes:
     - ExceptionReason
 
+# Define custom fields for the attributes (optional)
+# The key is the parameter name in the attribute constructor.
+# 'code: label' indicates the field used for deduplication.
+fields:
+    code: Error Code
+    technicalReason: Technical Reason
+    businessReason: Business Reason
+
 # Output files (supports .json, .yaml, .md). Remove the ones that you do not need. Format is deducted from the extension
 outputs:
     - output/exceptions.json

@@ -1,0 +1,17 @@
+# Configuration for Flow 04 (Custom Fields)
+source:
+    - examples/04-custom-fields-flow/src
+
+attributes:
+    - CustomReason
+
+fields:
+    code: Error Code
+    severity: Impact Level
+    ticket: Tracker ID
+
+outputs:
+    - examples/04-custom-fields-flow/output/exceptions.md
+    - examples/04-custom-fields-flow/output/exceptions.json
+
+allowDirectNew: false

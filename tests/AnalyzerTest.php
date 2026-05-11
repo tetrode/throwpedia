@@ -47,8 +47,8 @@ class AnalyzerTest extends TestCase
         $model = $catalog->entries;
 
         $this->assertArrayHasKey('ERR_1', $model);
-        $this->assertEquals('Biz 1', $model['ERR_1']->business);
-        $this->assertEquals('Tech 1', $model['ERR_1']->technical);
+        $this->assertEquals('Biz 1', $model['ERR_1']->values['businessReason']);
+        $this->assertEquals('Tech 1', $model['ERR_1']->values['technicalReason']);
         $this->assertEquals('App\MyException::error', $model['ERR_1']->exception);
         $this->assertEquals(['App\MyClass::method1'], $model['ERR_1']->thrown_from);
     }
@@ -174,10 +174,10 @@ class AnalyzerTest extends TestCase
         $this->assertArrayHasKey('ERR_A', $model);
         $this->assertArrayHasKey('ERR_B', $model);
 
-        $this->assertEquals('Biz A', $model['ERR_A']->business);
+        $this->assertEquals('Biz A', $model['ERR_A']->values['businessReason']);
         $this->assertEquals(['MyClass::methodWithTwoAttributes'], $model['ERR_A']->thrown_from);
 
-        $this->assertEquals('Biz B', $model['ERR_B']->business);
+        $this->assertEquals('Biz B', $model['ERR_B']->values['businessReason']);
         $this->assertEquals(['MyClass::methodWithTwoAttributes'], $model['ERR_B']->thrown_from);
     }
 
@@ -203,8 +203,8 @@ class AnalyzerTest extends TestCase
         $this->assertCount(2, $model);
         $this->assertArrayHasKey('DUP', $model);
         $this->assertArrayHasKey('DUP_1', $model);
-        $this->assertEquals('Biz 1', $model['DUP']->business);
-        $this->assertEquals('Biz 2', $model['DUP_1']->business);
+        $this->assertEquals('Biz 1', $model['DUP']->values['businessReason']);
+        $this->assertEquals('Biz 2', $model['DUP_1']->values['businessReason']);
         $this->assertEquals(['MyClass::methodWithDuplicateCodes'], $model['DUP']->thrown_from);
     }
 

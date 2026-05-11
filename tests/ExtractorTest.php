@@ -66,9 +66,9 @@ class ExtractorTest extends TestCase
         $this->assertEquals('App\MyClass', $data->class);
         $this->assertEquals('doSomething', $data->method);
         $this->assertCount(1, $data->attributes);
-        $this->assertEquals('ERR_001', $data->attributes[0]->code);
-        $this->assertEquals('Tech', $data->attributes[0]->technical);
-        $this->assertEquals('Biz', $data->attributes[0]->business);
+        $this->assertEquals('ERR_001', $data->attributes[0]->values['code']);
+        $this->assertEquals('Tech', $data->attributes[0]->values['technicalReason']);
+        $this->assertEquals('Biz', $data->attributes[0]->values['businessReason']);
         $this->assertEquals(['App\MyException::invalidInput'], $data->throws);
     }
 
@@ -109,9 +109,9 @@ class ExtractorTest extends TestCase
         $key = array_key_first($results);
         $this->assertIsString($key);
         $attr = $results[$key]->attributes[0];
-        $this->assertEquals('ERR_POS', $attr->code);
-        $this->assertEquals('Tech Pos', $attr->technical);
-        $this->assertEquals('Biz Pos', $attr->business);
+        $this->assertEquals('ERR_POS', $attr->values['code']);
+        $this->assertEquals('Tech Pos', $attr->values['technicalReason']);
+        $this->assertEquals('Biz Pos', $attr->values['businessReason']);
     }
 
     public function testHandlesMultipleFilesCorrectly(): void
@@ -167,10 +167,9 @@ class ExtractorTest extends TestCase
         $key = array_key_first($results);
         $this->assertIsString($key);
         $attrs = $results[$key]->attributes;
-
         $this->assertCount(2, $attrs);
-        $this->assertEquals('E1', $attrs[0]->code);
-        $this->assertEquals('E2', $attrs[1]->code);
+        $this->assertEquals('E1', $attrs[0]->values['code']);
+        $this->assertEquals('E2', $attrs[1]->values['code']);
     }
 
     public function testExtractsFromTrait(): void

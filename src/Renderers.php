@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tetrode\Throwpedia;
 
 use Nette\Neon\Neon;
+use Tetrode\Throwpedia\DTO\AttributeField;
 use Tetrode\Throwpedia\DTO\ExceptionCatalog;
 use Tetrode\Throwpedia\DTO\ExceptionModelEntry;
 
@@ -28,19 +29,32 @@ class Renderers
 
     /**
      * @param ExceptionCatalog $catalog
+     * @param AttributeField[] $fields
      */
-    public static function toMarkdown(ExceptionCatalog $catalog): string
+    public static function toMarkdown(ExceptionCatalog $catalog, array $fields): string
     {
         $md = "# Business Exceptions Catalog\n\n";
-        $md .= "| Code | Business Description | Technical Description | Exception | Thrown From |\n";
-        $md .= "|------|----------------------|-----------------------|-----------|-------------|\n";
+
+        $headers = [];
+        foreach ($fields as $field) {
+            $headers[] = $field->label;
+        }
+        $headers[] = 'Exception';
+        $headers[] = 'Thrown From';
+
+        $md .= "| " . implode(' | ', $headers) . " |\n";
+        $md .= "| " . implode(' | ', array_map(fn($h) => str_repeat('-', max(3, strlen($h))), $headers)) . " |\n";
 
         foreach ($catalog->entries as $key => $data) {
-            $code = $data->code ?? $key;
-            $business = str_replace('|', '\\|', (string)$data->business);
-            $technical = str_replace('|', '\\|', (string)$data->technical);
-            $thrownFrom = implode('<br>', $data->thrown_from);
-            $md .= "| $code | $business | $technical | `{$data->exception}` | $thrownFrom |\n";
+            $row = [];
+            foreach ($fields as $field) {
+                $val = $data->values[$field->name] ?? '';
+                $row[] = str_replace('|', '\\|', (string)$val);
+            }
+            $row[] = "`{$data->exception}`";
+            $row[] = implode('<br>', $data->thrown_from);
+
+            $md .= "| " . implode(' | ', $row) . " |\n";
         }
 
         return $md;
@@ -48,17 +62,33 @@ class Renderers
 
     /**
      * @param ExceptionCatalog $catalog
+     * @param AttributeField[] $fields
      */
-    public static function toText(ExceptionCatalog $catalog): string
+    public static function toText(ExceptionCatalog $catalog, array $fields): string
     {
         $text = "Business Exceptions Catalog\n";
         $text .= str_repeat('=', 27) . "\n\n";
 
+        $codeField = 'code';
+        foreach ($fields as $field) {
+            if ($field->isCode) {
+                $codeField = $field->name;
+                break;
+            }
+        }
+
         foreach ($catalog->entries as $key => $data) {
-            $code = $data->code ?? $key;
+            $code = $data->values[$codeField] ?? $key;
             $text .= "[$code]\n";
-            $text .= "  Business:  {$data->business}\n";
-            $text .= "  Technical: {$data->technical}\n";
+
+            foreach ($fields as $field) {
+                if ($field->isCode) {
+                    continue;
+                }
+                $val = $data->values[$field->name] ?? '';
+                $text .= "  {$field->label}: {$val}\n";
+            }
+
             $text .= "  Exception: {$data->exception}\n";
             $text .= "  Thrown from:\n";
             foreach ($data->thrown_from as $loc) {

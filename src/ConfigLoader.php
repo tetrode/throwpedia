@@ -142,9 +142,23 @@ class ConfigLoader
             $outputs[] = new OutputTarget((string)$outputPath, $extension);
         }
 
+        $fields = [];
+        if (isset($config['fields'])) {
+            foreach ((array)$config['fields'] as $name => $label) {
+                $fields[] = new DTO\AttributeField((string)$name, (string)$label, 'code' === $name);
+            }
+        } else {
+            $fields = [
+                new DTO\AttributeField('code', 'Code', true),
+                new DTO\AttributeField('technicalReason', 'Technical Reason'),
+                new DTO\AttributeField('businessReason', 'Business Reason'),
+            ];
+        }
+
         return new ThrowpediaConfig(
             sources: (array)($config['source'] ?? ['src']),
             attributes: (array)($config['attributes'] ?? ['ExceptionReason']),
+            fields: $fields,
             outputs: $outputs,
             allowDirectNew: (bool)($config['allowDirectNew'] ?? false),
             projectRoot: $projectRoot
