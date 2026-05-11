@@ -1,5 +1,5 @@
 /.phpunit.cache
-vendor/
 output/
+vendor/
 .php-cs-fixer.cache
 .idea/

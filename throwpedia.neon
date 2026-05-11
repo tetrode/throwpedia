@@ -1,14 +1,18 @@
 # Configuration for Throwpedia
 
+# Sources
 source:
     - src
 
+# Exception Attributes
 attributes:
     - ExceptionReason
 
+# Output files. Remove the ones that you do not need
 outputs:
     - ./output/exceptions.json
     - ./output/exceptions.yaml
     - ./output/exceptions.md
 
+# Is throw new Exception() allowed or is only throw MyException::Method() allowed
 allowDirectNew: false
