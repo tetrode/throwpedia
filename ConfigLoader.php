@@ -11,8 +11,11 @@ class ConfigLoader
     /**
      * @return array<string, mixed>
      */
-    public static function load(?string $configFile, string $defaultConfigFile): array
+    public static function load(?string $configFile, string $defaultConfigFileName): array
     {
+        $projectRoot = self::findProjectRoot();
+        $defaultConfigFile = $projectRoot . DIRECTORY_SEPARATOR . $defaultConfigFileName;
+
         if (null !== $configFile) {
             if (!file_exists($configFile)) {
                 echo "Error: Configuration file '$configFile' not found.\n";
@@ -77,7 +80,8 @@ class ConfigLoader
      */
     private static function interactiveSetup(string $defaultConfigFile): array
     {
-        echo "No configuration file found. Let's create one.\n";
+        $projectRoot = \dirname($defaultConfigFile);
+        echo "No configuration file found in $projectRoot. Let's create one.\n";
 
         echo 'Source directories (comma separated) [src]: ';
         $srcDirInput = trim((string)fgets(STDIN)) ?: 'src';
@@ -118,5 +122,27 @@ class ConfigLoader
         /** @var array<string, mixed> $config */
         $config = Neon::decode($neonContent);
         return $config;
+    }
+    public static function findProjectRoot(): string
+    {
+        // If we are in vendor/tetrode/throwpedia, the root is 3 levels up.
+        // But we should be more robust.
+        $dir = __DIR__;
+        while ($dir !== DIRECTORY_SEPARATOR && !file_exists($dir . DIRECTORY_SEPARATOR . 'composer.json')) {
+            $parent = \dirname($dir);
+            if ($parent === $dir) {
+                break;
+            }
+            $dir = $parent;
+        }
+
+        // If we found a composer.json, check if it's our own or the project root.
+        // If we are in vendor, the project root will have a composer.json and a vendor directory.
+        if (file_exists($dir . DIRECTORY_SEPARATOR . 'vendor/tetrode/throwpedia')) {
+            return $dir;
+        }
+
+        // If we are running from the tool's own root (e.g. during development)
+        return \getcwd() ?: $dir;
     }
 }

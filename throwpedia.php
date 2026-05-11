@@ -17,12 +17,14 @@ class Throwpedia
     {
         $verbosity = ConfigLoader::getVerbosity($argv);
         $configFile = ConfigLoader::getConfigFile($argv);
-        $config = ConfigLoader::load($configFile, __DIR__ . '/throwpedia.neon');
-        $files = self::collectFiles($config['source'] ?? ['src']);
+        $config = ConfigLoader::load($configFile, 'throwpedia.neon');
+        $projectRoot = ConfigLoader::findProjectRoot();
+
+        $files = self::collectFiles($config['source'] ?? ['src'], $projectRoot);
         $analyzer = self::initAnalyzer($config, $verbosity);
 
         $model = $analyzer->analyze($files);
-        self::processResults($model, $config['outputs'] ?? null, $verbosity);
+        self::processResults($model, $config['outputs'] ?? null, $verbosity, $projectRoot);
 
         echo "Analysis complete.\n";
 
@@ -34,7 +36,7 @@ class Throwpedia
      *
      * @return array<string>
      */
-    private static function collectFiles(array|string $sources): array
+    private static function collectFiles(array|string $sources, string $projectRoot): array
     {
         if (\is_string($sources)) {
             $sources = [$sources];
@@ -42,7 +44,7 @@ class Throwpedia
 
         $files = [];
         foreach ($sources as $srcDirRel) {
-            $srcDir = str_starts_with($srcDirRel, '/') ? $srcDirRel : __DIR__ . '/' . $srcDirRel;
+            $srcDir = str_starts_with($srcDirRel, '/') ? $srcDirRel : $projectRoot . DIRECTORY_SEPARATOR . $srcDirRel;
 
             if (!is_dir($srcDir)) {
                 echo "Warning: Source directory '$srcDir' not found.\n";
@@ -79,7 +81,7 @@ class Throwpedia
     /**
      * @param array<string, mixed> $model
      */
-    private static function processResults(array $model, mixed $outputs, int $verbosity): void
+    private static function processResults(array $model, mixed $outputs, int $verbosity, string $projectRoot): void
     {
         if (null === $outputs || (\is_array($outputs) && empty($outputs))) {
             echo Renderers::toText($model);
@@ -92,7 +94,7 @@ class Throwpedia
 
         foreach ($outputs as $outputPath) {
             if (!str_starts_with($outputPath, '/')) {
-                $outputPath = __DIR__ . '/' . $outputPath;
+                $outputPath = $projectRoot . DIRECTORY_SEPARATOR . $outputPath;
             }
 
             $dir = \dirname($outputPath);
