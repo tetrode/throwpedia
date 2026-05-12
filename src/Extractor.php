@@ -221,13 +221,13 @@ class Extractor extends NodeVisitorAbstract
                     if (!empty($fields)) {
                         $values = [];
                         foreach ($fields as $index => $field) {
-                            $values[$field->name] = (string)($args[$field->name] ?? $args[$index] ?? '');
+                            $values[$field->name] = (string)($args[$field->name] ?? $args['identifier'] ?? $args[$index] ?? '');
                         }
                         $attributes[] = new ExceptionAttribute($matchedTarget, $values);
                     } else {
-                        if (isset($args[0]) || isset($args['code'])) {
+                        if (isset($args[0]) || isset($args['identifier'])) {
                             $attributes[] = new ExceptionAttribute($matchedTarget, [
-                                'code'            => (string)($args['code'] ?? $args[0] ?? 'UNKNOWN'),
+                                'identifier'      => (string)($args['identifier'] ?? $args[0] ?? 'UNKNOWN'),
                                 'technicalReason' => (string)($args['technicalReason'] ?? $args['technical'] ?? $args[1] ?? ''),
                                 'businessReason'  => (string)($args['businessReason'] ?? $args['business'] ?? $args[2] ?? ''),
                             ]);
@@ -253,7 +253,10 @@ class Extractor extends NodeVisitorAbstract
 
                 if ($this->currentMethodKey && isset($this->methods[$this->currentMethodKey])) {
                     $method = $this->methods[$this->currentMethodKey];
-                    $method->throws[] = $className . '::' . $methodName;
+                    $method->throws[] = [
+                        'exception' => $className . '::' . $methodName,
+                        'line'      => $node->getLine(),
+                    ];
                 }
             }
         } elseif ($node->expr instanceof New_) {
@@ -262,7 +265,10 @@ class Extractor extends NodeVisitorAbstract
                 $className = $class->toString();
                 if ($this->currentMethodKey && isset($this->methods[$this->currentMethodKey])) {
                     $method = $this->methods[$this->currentMethodKey];
-                    $method->throws[] = $className;
+                    $method->throws[] = [
+                        'exception' => $className,
+                        'line'      => $node->getLine(),
+                    ];
                 }
 
                 $this->directNewThrows[] = new DirectNewThrow(

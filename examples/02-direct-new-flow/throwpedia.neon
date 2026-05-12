@@ -6,7 +6,7 @@ attributes:
     - ExceptionReason
 
 fields:
-    code: Code
+    identifier: Code
     technicalReason: Technical Reason
     businessReason: Business Reason
 
@@ -15,5 +15,5 @@ outputs:
 
 allowDirectNew: true
 
-# Suppress duplicate code warnings (optional)
-suppressDuplicateCodeWarning: false
+# Suppress duplicate identifier warnings (optional)
+suppressDuplicateIdentifierWarning: false

@@ -121,7 +121,7 @@ class ConfigLoader
             # Default fields for attributes (optional)
             # These are used by default for all attributes listed above.
             fields:
-                code: Code
+                identifier: Identifier
                 technicalReason: Technical Reason
                 businessReason: Business Reason
 
@@ -134,8 +134,8 @@ class ConfigLoader
             # Is throw MyException::Method() required? (false means direct 'new' is not allowed)
             allowDirectNew: $allowNewStr
 
-            # Suppress duplicate code warnings (optional)
-            suppressDuplicateCodeWarning: false
+            # Suppress duplicate identifier warnings (optional)
+            suppressDuplicateIdentifierWarning: false
             NEON;
 
         file_put_contents($defaultConfigFile, $neonContent);
@@ -159,11 +159,11 @@ class ConfigLoader
         $defaultFields = [];
         if (isset($config['fields'])) {
             foreach ((array)$config['fields'] as $name => $label) {
-                $defaultFields[] = new DTO\AttributeField((string)$name, (string)$label, 'code' === $name);
+                $defaultFields[] = new DTO\AttributeField((string)$name, (string)$label, 'identifier' === $name);
             }
         } else {
             $defaultFields = [
-                new DTO\AttributeField('code', 'Code', true),
+                new DTO\AttributeField('identifier', 'Identifier', true),
                 new DTO\AttributeField('technicalReason', 'Technical Reason'),
                 new DTO\AttributeField('businessReason', 'Business Reason'),
             ];
@@ -177,7 +177,7 @@ class ConfigLoader
                 $attrName = $key;
                 $fields = [];
                 foreach ((array)$val as $fName => $fLabel) {
-                    $fields[] = new DTO\AttributeField((string)$fName, (string)$fLabel, 'code' === $fName);
+                    $fields[] = new DTO\AttributeField((string)$fName, (string)$fLabel, 'identifier' === $fName);
                 }
                 $attributeFields[$attrName] = $fields;
             } else {
@@ -191,7 +191,7 @@ class ConfigLoader
             attributeFields: $attributeFields,
             outputs: $outputs,
             allowDirectNew: (bool)($config['allowDirectNew'] ?? false),
-            suppressDuplicateCodeWarning: (bool)($config['suppressDuplicateCodeWarning'] ?? false),
+            suppressDuplicateIdentifierWarning: (bool)($config['suppressDuplicateIdentifierWarning'] ?? false),
             projectRoot: $projectRoot
         );
     }

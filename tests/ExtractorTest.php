@@ -24,7 +24,7 @@ class ExtractorTest extends TestCase
         $this->extractor = new Extractor(new NullOutput());
         $this->extractor->setAttributeFields([
             'ExceptionReason' => [
-                new AttributeField('code', 'Code', true),
+                new AttributeField('identifier', 'Identifier', true),
                 new AttributeField('technicalReason', 'Technical Reason'),
                 new AttributeField('businessReason', 'Business Reason'),
             ],
@@ -35,9 +35,9 @@ class ExtractorTest extends TestCase
     /**
      * @return array<string, MethodAnalysisResult>
      */
-    private function analyzeCode(string $code): array
+    private function analyzeCode(string $sourcecode): array
     {
-        $stmts = $this->parser->parse($code);
+        $stmts = $this->parser->parse($sourcecode);
         $this->assertIsArray($stmts);
         $traverser = new NodeTraverser();
         $traverser->addVisitor(new NameResolver());
@@ -51,18 +51,18 @@ class ExtractorTest extends TestCase
 
     public function testExtractsMethodWithAttributeAndStaticCall(): void
     {
-        $code = <<<'PHP'
+        $sourcecode = <<<'PHP'
             <?php
             namespace App;
             class MyClass {
-                #[ExceptionReason(code: 'ERR_001', technicalReason: 'Tech', businessReason: 'Biz')]
+                #[ExceptionReason(identifier: 'ERR_001', technicalReason: 'Tech', businessReason: 'Biz')]
                 public function doSomething() {
                     throw MyException::invalidInput();
                 }
             }
             PHP;
         $this->extractor->setCurrentFile('test.php');
-        $results = $this->analyzeCode($code);
+        $results = $this->analyzeCode($sourcecode);
 
         $this->assertCount(1, $results);
         $key = array_key_first($results);
@@ -72,15 +72,15 @@ class ExtractorTest extends TestCase
         $this->assertEquals('App\MyClass', $data->class);
         $this->assertEquals('doSomething', $data->method);
         $this->assertCount(1, $data->attributes);
-        $this->assertEquals('ERR_001', $data->attributes[0]->values['code']);
+        $this->assertEquals('ERR_001', $data->attributes[0]->values['identifier']);
         $this->assertEquals('Tech', $data->attributes[0]->values['technicalReason']);
         $this->assertEquals('Biz', $data->attributes[0]->values['businessReason']);
-        $this->assertEquals(['App\MyException::invalidInput'], $data->throws);
+        $this->assertEquals([['exception' => 'App\MyException::invalidInput', 'line' => 6]], $data->throws);
     }
 
     public function testExtractsDirectNewThrows(): void
     {
-        $code = <<<'PHP'
+        $sourcecode = <<<'PHP'
             <?php
             class MyClass {
                 public function doSomething() {
@@ -89,7 +89,7 @@ class ExtractorTest extends TestCase
             }
             PHP;
         $this->extractor->setCurrentFile('test.php');
-        $this->analyzeCode($code);
+        $this->analyzeCode($sourcecode);
 
         $directNew = $this->extractor->getDirectNewThrows();
         $this->assertCount(1, $directNew);
@@ -100,7 +100,7 @@ class ExtractorTest extends TestCase
 
     public function testHandlePositionalArgumentsInAttribute(): void
     {
-        $code = <<<'PHP'
+        $sourcecode = <<<'PHP'
             <?php
             class MyClass {
                 #[ExceptionReason('ERR_POS', 'Tech Pos', 'Biz Pos')]
@@ -110,38 +110,38 @@ class ExtractorTest extends TestCase
             }
             PHP;
         $this->extractor->setCurrentFile('test.php');
-        $results = $this->analyzeCode($code);
+        $results = $this->analyzeCode($sourcecode);
 
         $key = array_key_first($results);
         $this->assertIsString($key);
         $attr = $results[$key]->attributes[0];
-        $this->assertEquals('ERR_POS', $attr->values['code']);
+        $this->assertEquals('ERR_POS', $attr->values['identifier']);
         $this->assertEquals('Tech Pos', $attr->values['technicalReason']);
         $this->assertEquals('Biz Pos', $attr->values['businessReason']);
     }
 
     public function testHandlesMultipleFilesCorrectly(): void
     {
-        $code1 = <<<'PHP'
+        $sourcecode1 = <<<'PHP'
             <?php
             namespace App;
             class Class1 {
-                #[ExceptionReason(code: 'E1', technicalReason: 'T1', businessReason: 'B1')]
+                #[ExceptionReason(identifier: 'E1', technicalReason: 'T1', businessReason: 'B1')]
                 public function m1() { throw E::e(); }
             }
             PHP;
-        $code2 = <<<'PHP'
+        $sourcecode2 = <<<'PHP'
             <?php
             namespace App;
             class Class2 {
-                #[ExceptionReason(code: 'E2', technicalReason: 'T2', businessReason: 'B2')]
+                #[ExceptionReason(identifier: 'E2', technicalReason: 'T2', businessReason: 'B2')]
                 public function m2() { throw E::e(); }
             }
             PHP;
         $this->extractor->setCurrentFile('file1.php');
-        $this->analyzeCode($code1);
+        $this->analyzeCode($sourcecode1);
         $this->extractor->setCurrentFile('file2.php');
-        $this->analyzeCode($code2);
+        $this->analyzeCode($sourcecode2);
 
         $results = $this->extractor->getResults();
         $this->assertCount(2, $results);
@@ -156,42 +156,42 @@ class ExtractorTest extends TestCase
 
     public function testExtractsMethodWithMultipleAttributes(): void
     {
-        $code = <<<'PHP'
+        $sourcecode = <<<'PHP'
             <?php
             class MyClass {
-                #[ExceptionReason(code: 'E1', technicalReason: 'T1', businessReason: 'B1')]
-                #[ExceptionReason(code: 'E2', technicalReason: 'T2', businessReason: 'B2')]
+                #[ExceptionReason(identifier: 'E1', technicalReason: 'T1', businessReason: 'B1')]
+                #[ExceptionReason(identifier: 'E2', technicalReason: 'T2', businessReason: 'B2')]
                 public function multiAttrMethod() {
                     throw MyException::error();
                 }
             }
             PHP;
         $this->extractor->setCurrentFile('test.php');
-        $results = $this->analyzeCode($code);
+        $results = $this->analyzeCode($sourcecode);
 
         $this->assertCount(1, $results);
         $key = array_key_first($results);
         $this->assertIsString($key);
         $attrs = $results[$key]->attributes;
         $this->assertCount(2, $attrs);
-        $this->assertEquals('E1', $attrs[0]->values['code']);
-        $this->assertEquals('E2', $attrs[1]->values['code']);
+        $this->assertEquals('E1', $attrs[0]->values['identifier']);
+        $this->assertEquals('E2', $attrs[1]->values['identifier']);
     }
 
     public function testExtractsFromTrait(): void
     {
-        $code = <<<'PHP'
+        $sourcecode = <<<'PHP'
             <?php
             namespace App;
             trait MyTrait {
-                #[ExceptionReason(code: 'TRAIT_ERR', technicalReason: 'T', businessReason: 'B')]
+                #[ExceptionReason(identifier: 'TRAIT_ERR', technicalReason: 'T', businessReason: 'B')]
                 public function traitMethod() {
                     throw MyEx::fail();
                 }
             }
             PHP;
         $this->extractor->setCurrentFile('trait.php');
-        $results = $this->analyzeCode($code);
+        $results = $this->analyzeCode($sourcecode);
         $this->assertCount(1, $results);
         $data = reset($results);
         $this->assertInstanceOf(MethodAnalysisResult::class, $data);
@@ -201,15 +201,15 @@ class ExtractorTest extends TestCase
 
     public function testExtractsFromGlobalFunction(): void
     {
-        $code = <<<'PHP'
+        $sourcecode = <<<'PHP'
             <?php
-            #[ExceptionReason(code: 'FUNC_ERR', technicalReason: 'T', businessReason: 'B')]
+            #[ExceptionReason(identifier: 'FUNC_ERR', technicalReason: 'T', businessReason: 'B')]
             function myGlobalFunction() {
                 throw MyEx::fail();
             }
             PHP;
         $this->extractor->setCurrentFile('func.php');
-        $results = $this->analyzeCode($code);
+        $results = $this->analyzeCode($sourcecode);
         $this->assertCount(1, $results);
         $data = reset($results);
         $this->assertInstanceOf(MethodAnalysisResult::class, $data);
@@ -219,7 +219,7 @@ class ExtractorTest extends TestCase
 
     public function testExtractsFromExpressionThrow(): void
     {
-        $code = <<<'PHP'
+        $sourcecode = <<<'PHP'
             <?php
             class MyClass {
                 public function test($x) {
@@ -228,7 +228,7 @@ class ExtractorTest extends TestCase
             }
             PHP;
         $this->extractor->setCurrentFile('expr.php');
-        $this->analyzeCode($code);
+        $this->analyzeCode($sourcecode);
         $directNew = $this->extractor->getDirectNewThrows();
         $this->assertCount(1, $directNew);
         $this->assertEquals('RuntimeException', $directNew[0]->exception);

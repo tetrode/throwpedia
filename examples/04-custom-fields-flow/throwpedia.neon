@@ -4,14 +4,14 @@ source:
 
 attributes:
     CustomReason:
-        code: Error Code
+        identifier: Error Code
         severity: Impact Level
         ticket: Tracker ID
     AnotherReason:
-        code: Quick Code
+        identifier: Quick Code
         note: Simple Note
     AuditReason:
-        code: Audit Code
+        identifier: Audit Code
         action: Audit Action
 
 outputs:
@@ -20,5 +20,5 @@ outputs:
 
 allowDirectNew: false
 
-# Suppress duplicate code warnings (optional)
-suppressDuplicateCodeWarning: true
+# Suppress duplicate identifier warnings (optional)
+suppressDuplicateIdentifierWarning: true

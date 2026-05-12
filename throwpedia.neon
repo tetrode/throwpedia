@@ -8,9 +8,9 @@ source:
 attributes:
     - ExceptionReason
 
-# Attribute Fields (optional, defaults to code, technicalReason, businessReason)
+# Attribute Fields (optional, defaults to identifier, technicalReason, businessReason)
 fields:
-    code: Code
+    identifier: Identifier
     technicalReason: Technical Reason
     businessReason: Business Reason
 
@@ -23,6 +23,6 @@ outputs:
 # Is throw new Exception() allowed or is only throw MyException::Method() allowed
 allowDirectNew: false
 
-# Suppress duplicate code warnings (optional)
-suppressDuplicateCodeWarning: false
+# Suppress duplicate identifier warnings (optional)
+suppressDuplicateIdentifierWarning: false
 

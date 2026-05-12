@@ -56,12 +56,12 @@ class Analyzer
 
         foreach ($files as $file) {
             try {
-                $code = @file_get_contents($file);
-                if (false === $code) {
+                $sourcecode = @file_get_contents($file);
+                if (false === $sourcecode) {
                     continue;
                 }
 
-                $stmts = $this->parser->parse($code);
+                $stmts = $this->parser->parse($sourcecode);
                 if (null === $stmts) {
                     continue;
                 }
@@ -83,21 +83,32 @@ class Analyzer
         /** @var array<string, ExceptionModelEntry> $model */
         $model = [];
         foreach ($results->methods as $methodData) {
-            $location = \sprintf('%s::%s', $methodData->class, $methodData->method);
-            $methodExceptions = array_unique($methodData->throws);
+            $methodExceptions = [];
+            $locations = [];
+            foreach ($methodData->throws as $throwInfo) {
+                $methodExceptions[] = $throwInfo['exception'];
+                $locations[] = \sprintf('%s::%s:%d', $methodData->class, $methodData->method, $throwInfo['line']);
+            }
+            $methodExceptions = array_unique($methodExceptions);
+            $locations = array_unique($locations);
+
+            if (empty($locations)) {
+                $locations = [\sprintf('%s::%s', $methodData->class, $methodData->method)];
+            }
+
             $exceptionsStr = implode(', ', $methodExceptions) ?: 'unknown';
 
             foreach ($methodData->attributes as $attr) {
                 $fields = $this->config->attributeFields[$attr->attributeName] ?? [];
-                $codeField = 'code';
+                $identifierField = 'identifier';
                 foreach ($fields as $field) {
-                    if ($field->isCode) {
-                        $codeField = $field->name;
+                    if ($field->isIdentifier) {
+                        $identifierField = $field->name;
                         break;
                     }
                 }
 
-                $code = $attr->values[$codeField] ?? 'UNKNOWN';
+                $identifier = $attr->values[$identifierField] ?? 'UNKNOWN';
 
                 $foundKey = null;
                 foreach ($model as $existingKey => $entry) {
@@ -110,8 +121,10 @@ class Analyzer
                 if (null !== $foundKey) {
                     $entry = $model[$foundKey];
                     $newThrownFrom = $entry->thrown_from;
-                    if (!\in_array($location, $newThrownFrom, true)) {
-                        $newThrownFrom[] = $location;
+                    foreach ($locations as $loc) {
+                        if (!\in_array($loc, $newThrownFrom, true)) {
+                            $newThrownFrom[] = $loc;
+                        }
                     }
                     // Add any new exceptions from this method to the existing entry
                     $existingExceptions = explode(', ', $entry->exception);
@@ -127,12 +140,12 @@ class Analyzer
                         thrown_from: $newThrownFrom,
                     );
                 } else {
-                    $uniqueKey = $attr->attributeName . ':' . $code;
+                    $uniqueKey = $attr->attributeName . ':' . $identifier;
                     $counter = 1;
                     while (isset($model[$uniqueKey])) {
-                        if (1 === $counter && !$this->config->suppressDuplicateCodeWarning) {
+                        if (1 === $counter && !$this->config->suppressDuplicateIdentifierWarning) {
                             $this->validationIssues[] = new ValidationIssue(
-                                message: \sprintf("Duplicate code '%s' found with different reasons for attribute '%s'.", $code, $attr->attributeName),
+                                message: \sprintf("Duplicate identifier '%s' found with different reasons for attribute '%s'.", $identifier, $attr->attributeName),
                                 severity: ValidationIssue::SEVERITY_WARNING,
                                 file: $methodData->file,
                                 line: $methodData->line,
@@ -140,14 +153,14 @@ class Analyzer
                                 method: $methodData->method
                             );
                         }
-                        $uniqueKey = $attr->attributeName . ':' . $code . '_' . $counter++;
+                        $uniqueKey = $attr->attributeName . ':' . $identifier . '_' . $counter++;
                     }
 
                     $model[$uniqueKey] = new ExceptionModelEntry(
                         attributeName: $attr->attributeName,
                         values: $attr->values,
                         exception: $exceptionsStr,
-                        thrown_from: [$location],
+                        thrown_from: $locations,
                     );
                 }
             }
@@ -192,22 +205,22 @@ class Analyzer
 
         foreach ($directNew as $throw) {
             $exceptionBaseName = strtoupper(basename(str_replace('\\', '/', $throw->exception)));
-            $code = 'DIRECT_NEW_' . $exceptionBaseName;
+            $identifier = 'DIRECT_NEW_' . $exceptionBaseName;
 
             // Avoid duplicates if multiple direct news of same exception
             $counter = 1;
-            $originalCode = $code;
-            $uniqueKey = $firstAttrName . ':' . $code;
+            $originalIdentifier = $identifier;
+            $uniqueKey = $firstAttrName . ':' . $identifier;
             while (isset($model[$uniqueKey])) {
-                $uniqueKey = $firstAttrName . ':' . $originalCode . '_' . $counter++;
+                $uniqueKey = $firstAttrName . ':' . $originalIdentifier . '_' . $counter++;
             }
 
-            $location = \sprintf('%s::%s', $throw->class, $throw->method);
+            $location = \sprintf('%s::%s:%d', $throw->class, $throw->method, $throw->line);
 
             $values = [];
             foreach ($fields as $field) {
-                if ($field->isCode) {
-                    $values[$field->name] = $code;
+                if ($field->isIdentifier) {
+                    $values[$field->name] = $identifier;
                 } elseif (str_contains(strtolower($field->label), 'business')) {
                     $values[$field->name] = 'Direct instantiation of ' . $throw->exception;
                 } elseif (str_contains(strtolower($field->label), 'technical')) {

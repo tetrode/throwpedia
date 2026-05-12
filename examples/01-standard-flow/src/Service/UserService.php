@@ -10,7 +10,7 @@ use Tetrode\Throwpedia\Attributes\ExceptionReason;
 class UserService
 {
     #[ExceptionReason(
-        code: 'USER_NOT_FOUND',
+        identifier: 'USER_NOT_FOUND',
         technicalReason: 'The requested user ID does not exist in the database.',
         businessReason: 'The user you are looking for could not be found.'
     )]
@@ -21,7 +21,7 @@ class UserService
     }
 
     #[ExceptionReason(
-        code: 'USER_ALREADY_EXISTS',
+        identifier: 'USER_ALREADY_EXISTS',
         technicalReason: 'Duplicate entry for unique email field.',
         businessReason: 'An account with this email already exists.'
     )]

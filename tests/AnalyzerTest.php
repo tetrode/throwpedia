@@ -31,17 +31,17 @@ class AnalyzerTest extends TestCase
 
     public function testAnalyzeAndBuildModel(): void
     {
-        $code = <<<'PHP'
+        $sourcecode = <<<'PHP'
             <?php
             namespace App;
             class MyClass {
-                #[ExceptionReason(code: 'ERR_1', technicalReason: 'Tech 1', businessReason: 'Biz 1')]
+                #[ExceptionReason(identifier: 'ERR_1', technicalReason: 'Tech 1', businessReason: 'Biz 1')]
                 public function method1() {
                     throw MyException::error();
                 }
             }
             PHP;
-        file_put_contents($this->tempFile, $code);
+        file_put_contents($this->tempFile, $sourcecode);
 
         $analyzer = new Analyzer($this->output);
         $catalog = $analyzer->analyze([$this->tempFile]);
@@ -51,12 +51,12 @@ class AnalyzerTest extends TestCase
         $this->assertEquals('Biz 1', $model['ExceptionReason:ERR_1']->values['businessReason']);
         $this->assertEquals('Tech 1', $model['ExceptionReason:ERR_1']->values['technicalReason']);
         $this->assertEquals('App\MyException::error', $model['ExceptionReason:ERR_1']->exception);
-        $this->assertEquals(['App\MyClass::method1'], $model['ExceptionReason:ERR_1']->thrown_from);
+        $this->assertEquals(['App\MyClass::method1:6'], $model['ExceptionReason:ERR_1']->thrown_from);
     }
 
     public function testValidationErrorsForMissingAttribute(): void
     {
-        $code = <<<'PHP'
+        $sourcecode = <<<'PHP'
             <?php
             class MyClass {
                 public function methodWithoutAttr() {
@@ -64,7 +64,7 @@ class AnalyzerTest extends TestCase
                 }
             }
             PHP;
-        file_put_contents($this->tempFile, $code);
+        file_put_contents($this->tempFile, $sourcecode);
 
         $analyzer = new Analyzer($this->output);
         $analyzer->analyze([$this->tempFile]);
@@ -76,7 +76,7 @@ class AnalyzerTest extends TestCase
 
     public function testValidationErrorsForDirectNew(): void
     {
-        $code = <<<'PHP'
+        $sourcecode = <<<'PHP'
             <?php
             class MyClass {
                 public function methodWithDirectNew() {
@@ -84,7 +84,7 @@ class AnalyzerTest extends TestCase
                 }
             }
             PHP;
-        file_put_contents($this->tempFile, $code);
+        file_put_contents($this->tempFile, $sourcecode);
 
         $analyzer = new Analyzer($this->output, new AnalyzerConfig(allowDirectNew: false));
         $analyzer->analyze([$this->tempFile]);
@@ -97,7 +97,7 @@ class AnalyzerTest extends TestCase
 
     public function testAllowDirectNewInModel(): void
     {
-        $code = <<<'PHP'
+        $sourcecode = <<<'PHP'
             <?php
             class MyClass {
                 public function methodWithDirectNew() {
@@ -105,7 +105,7 @@ class AnalyzerTest extends TestCase
                 }
             }
             PHP;
-        file_put_contents($this->tempFile, $code);
+        file_put_contents($this->tempFile, $sourcecode);
 
         $analyzer = new Analyzer($this->output, new AnalyzerConfig(allowDirectNew: true));
         $catalog = $analyzer->analyze([$this->tempFile]);
@@ -117,8 +117,8 @@ class AnalyzerTest extends TestCase
 
     public function testAnalyzeHandlesParseError(): void
     {
-        $code = '<?php invalid syntax here';
-        file_put_contents($this->tempFile, $code);
+        $sourcecode = '<?php invalid syntax here';
+        file_put_contents($this->tempFile, $sourcecode);
 
         $bufferedOutput = new BufferedOutput();
         $analyzer = new Analyzer($bufferedOutput);
@@ -137,14 +137,14 @@ class AnalyzerTest extends TestCase
 
     public function testAppendDirectNewThrowsWithDuplicates(): void
     {
-        $code = <<<'PHP'
+        $sourcecode = <<<'PHP'
             <?php
             class MyClass {
                 public function m1() { throw new \Exception('1'); }
                 public function m2() { throw new \Exception('2'); }
             }
             PHP;
-        file_put_contents($this->tempFile, $code);
+        file_put_contents($this->tempFile, $sourcecode);
         $analyzer = new Analyzer($this->output, new AnalyzerConfig(allowDirectNew: true));
         $catalog = $analyzer->analyze([$this->tempFile]);
         $model = $catalog->entries;
@@ -155,17 +155,17 @@ class AnalyzerTest extends TestCase
 
     public function testAnalyzeWithMultipleAttributesOnSameMethod(): void
     {
-        $code = <<<'PHP'
+        $sourcecode = <<<'PHP'
             <?php
             class MyClass {
-                #[ExceptionReason(code: 'ERR_A', technicalReason: 'Tech A', businessReason: 'Biz A')]
-                #[ExceptionReason(code: 'ERR_B', technicalReason: 'Tech B', businessReason: 'Biz B')]
+                #[ExceptionReason(identifier: 'ERR_A', technicalReason: 'Tech A', businessReason: 'Biz A')]
+                #[ExceptionReason(identifier: 'ERR_B', technicalReason: 'Tech B', businessReason: 'Biz B')]
                 public function methodWithTwoAttributes() {
                     throw MyException::error();
                 }
             }
             PHP;
-        file_put_contents($this->tempFile, $code);
+        file_put_contents($this->tempFile, $sourcecode);
 
         $analyzer = new Analyzer($this->output);
         $catalog = $analyzer->analyze([$this->tempFile]);
@@ -176,25 +176,25 @@ class AnalyzerTest extends TestCase
         $this->assertArrayHasKey('ExceptionReason:ERR_B', $model);
 
         $this->assertEquals('Biz A', $model['ExceptionReason:ERR_A']->values['businessReason']);
-        $this->assertEquals(['MyClass::methodWithTwoAttributes'], $model['ExceptionReason:ERR_A']->thrown_from);
+        $this->assertEquals(['MyClass::methodWithTwoAttributes:6'], $model['ExceptionReason:ERR_A']->thrown_from);
 
         $this->assertEquals('Biz B', $model['ExceptionReason:ERR_B']->values['businessReason']);
-        $this->assertEquals(['MyClass::methodWithTwoAttributes'], $model['ExceptionReason:ERR_B']->thrown_from);
+        $this->assertEquals(['MyClass::methodWithTwoAttributes:6'], $model['ExceptionReason:ERR_B']->thrown_from);
     }
 
-    public function testAnalyzeWithDuplicateAttributeCodesOnSameMethod(): void
+    public function testAnalyzeWithDuplicateAttributeIdentifiersOnSameMethod(): void
     {
-        $code = <<<'PHP'
+        $sourcecode = <<<'PHP'
             <?php
             class MyClass {
-                #[ExceptionReason(code: 'DUP', technicalReason: 'Tech 1', businessReason: 'Biz 1')]
-                #[ExceptionReason(code: 'DUP', technicalReason: 'Tech 2', businessReason: 'Biz 2')]
-                public function methodWithDuplicateCodes() {
+                #[ExceptionReason(identifier: 'DUP', technicalReason: 'Tech 1', businessReason: 'Biz 1')]
+                #[ExceptionReason(identifier: 'DUP', technicalReason: 'Tech 2', businessReason: 'Biz 2')]
+                public function methodWithDuplicateIdentifiers() {
                     throw MyException::error();
                 }
             }
             PHP;
-        file_put_contents($this->tempFile, $code);
+        file_put_contents($this->tempFile, $sourcecode);
 
         $analyzer = new Analyzer($this->output);
         $catalog = $analyzer->analyze([$this->tempFile]);
@@ -206,20 +206,20 @@ class AnalyzerTest extends TestCase
         $this->assertArrayHasKey('ExceptionReason:DUP_1', $model);
         $this->assertEquals('Biz 1', $model['ExceptionReason:DUP']->values['businessReason']);
         $this->assertEquals('Biz 2', $model['ExceptionReason:DUP_1']->values['businessReason']);
-        $this->assertEquals(['MyClass::methodWithDuplicateCodes'], $model['ExceptionReason:DUP']->thrown_from);
+        $this->assertEquals(['MyClass::methodWithDuplicateIdentifiers:6'], $model['ExceptionReason:DUP']->thrown_from);
     }
 
-    public function testAnalyzeTriggersWarningForDuplicateCodesWithDifferentReasons(): void
+    public function testAnalyzeTriggersWarningForDuplicateIdentifiersWithDifferentReasons(): void
     {
-        $code = <<<'PHP'
+        $sourcecode = <<<'PHP'
             <?php
             class MyClass {
-                #[ExceptionReason(code: 'DUP', technicalReason: 'Tech 1', businessReason: 'Biz 1')]
-                #[ExceptionReason(code: 'DUP', technicalReason: 'Tech 2', businessReason: 'Biz 2')]
+                #[ExceptionReason(identifier: 'DUP', technicalReason: 'Tech 1', businessReason: 'Biz 1')]
+                #[ExceptionReason(identifier: 'DUP', technicalReason: 'Tech 2', businessReason: 'Biz 2')]
                 public function method1() { throw E::e(); }
             }
             PHP;
-        file_put_contents($this->tempFile, $code);
+        file_put_contents($this->tempFile, $sourcecode);
 
         $analyzer = new Analyzer($this->output);
         $analyzer->analyze([$this->tempFile]);
@@ -229,23 +229,23 @@ class AnalyzerTest extends TestCase
         $this->assertCount(1, $warnings);
         $warning = reset($warnings);
         $this->assertInstanceOf(ValidationIssue::class, $warning);
-        $this->assertStringContainsString("Duplicate code 'DUP' found with different reasons", $warning->message);
+        $this->assertStringContainsString("Duplicate identifier 'DUP' found with different reasons", $warning->message);
     }
 
-    public function testAnalyzeWithSameCodeOnDifferentMethods(): void
+    public function testAnalyzeWithSameIdentifierOnDifferentMethods(): void
     {
-        $code = <<<'PHP'
+        $sourcecode = <<<'PHP'
             <?php
             class ClassA {
-                #[ExceptionReason(code: 'SHARED', technicalReason: 'Tech', businessReason: 'Biz')]
+                #[ExceptionReason(identifier: 'SHARED', technicalReason: 'Tech', businessReason: 'Biz')]
                 public function methodA() { throw E::e(); }
             }
             class ClassB {
-                #[ExceptionReason(code: 'SHARED', technicalReason: 'Tech', businessReason: 'Biz')]
+                #[ExceptionReason(identifier: 'SHARED', technicalReason: 'Tech', businessReason: 'Biz')]
                 public function methodB() { throw E::e(); }
             }
             PHP;
-        file_put_contents($this->tempFile, $code);
+        file_put_contents($this->tempFile, $sourcecode);
 
         $analyzer = new Analyzer($this->output);
         $catalog = $analyzer->analyze([$this->tempFile]);
@@ -254,17 +254,17 @@ class AnalyzerTest extends TestCase
         $this->assertCount(1, $model);
         $this->assertArrayHasKey('ExceptionReason:SHARED', $model);
         $this->assertCount(2, $model['ExceptionReason:SHARED']->thrown_from);
-        $this->assertContains('ClassA::methodA', $model['ExceptionReason:SHARED']->thrown_from);
-        $this->assertContains('ClassB::methodB', $model['ExceptionReason:SHARED']->thrown_from);
+        $this->assertContains('ClassA::methodA:4', $model['ExceptionReason:SHARED']->thrown_from);
+        $this->assertContains('ClassB::methodB:8', $model['ExceptionReason:SHARED']->thrown_from);
     }
 
     public function testAnalyzeWithMultipleAttributesAndMultipleThrows(): void
     {
-        $code = <<<'PHP'
+        $sourcecode = <<<'PHP'
             <?php
             class MyClass {
-                #[ExceptionReason(code: 'E1', technicalReason: 'T1', businessReason: 'B1')]
-                #[ExceptionReason(code: 'E2', technicalReason: 'T2', businessReason: 'B2')]
+                #[ExceptionReason(identifier: 'E1', technicalReason: 'T1', businessReason: 'B1')]
+                #[ExceptionReason(identifier: 'E2', technicalReason: 'T2', businessReason: 'B2')]
                 public function multipleBoth() {
                     if (rand(0,1)) {
                          throw Exc1::error();
@@ -273,7 +273,7 @@ class AnalyzerTest extends TestCase
                 }
             }
             PHP;
-        file_put_contents($this->tempFile, $code);
+        file_put_contents($this->tempFile, $sourcecode);
 
         $analyzer = new Analyzer($this->output);
         $catalog = $analyzer->analyze([$this->tempFile]);
@@ -285,19 +285,19 @@ class AnalyzerTest extends TestCase
         $this->assertEquals('Exc1::error, Exc2::error', $model['ExceptionReason:E2']->exception);
     }
 
-    public function testAnalyzeSuppressesWarningForDuplicateCodes(): void
+    public function testAnalyzeSuppressesWarningForDuplicateIdentifiers(): void
     {
-        $code = <<<'PHP'
+        $sourcecode = <<<'PHP'
             <?php
             class MyClass {
-                #[ExceptionReason(code: 'DUP', technicalReason: 'Tech 1', businessReason: 'Biz 1')]
-                #[ExceptionReason(code: 'DUP', technicalReason: 'Tech 2', businessReason: 'Biz 2')]
+                #[ExceptionReason(identifier: 'DUP', technicalReason: 'Tech 1', businessReason: 'Biz 1')]
+                #[ExceptionReason(identifier: 'DUP', technicalReason: 'Tech 2', businessReason: 'Biz 2')]
                 public function method1() { throw E::e(); }
             }
             PHP;
-        file_put_contents($this->tempFile, $code);
+        file_put_contents($this->tempFile, $sourcecode);
 
-        $analyzer = new Analyzer($this->output, new AnalyzerConfig(suppressDuplicateCodeWarning: true));
+        $analyzer = new Analyzer($this->output, new AnalyzerConfig(suppressDuplicateIdentifierWarning: true));
         $analyzer->analyze([$this->tempFile]);
 
         $issues = $analyzer->getValidationIssues();

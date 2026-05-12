@@ -12,12 +12,12 @@ use App\Exception\OrderException;
 class OrderService
 {
     #[CustomReason(
-        code: 'OUT_OF_STOCK',
+        identifier: 'OUT_OF_STOCK',
         severity: 'critical',
         ticket: 'JIRA-123'
     )]
     #[AnotherReason(
-        code: 'LOGISTIC_DELAY',
+        identifier: 'LOGISTIC_DELAY',
         note: 'Expected delay 2 days'
     )]
     public function checkout(string $sku): void
@@ -27,12 +27,12 @@ class OrderService
     }
 
     #[CustomReason(
-        code: 'INVALID_COUPON',
+        identifier: 'INVALID_COUPON',
         severity: 'low',
         ticket: 'JIRA-456'
     )]
     #[AuditReason(
-        code: 'SECURITY_ALERT',
+        identifier: 'SECURITY_ALERT',
         action: 'BLOCK_USER'
     )]
     public function applyCoupon(string $coupon): void

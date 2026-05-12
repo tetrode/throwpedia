@@ -95,7 +95,7 @@ class Throwpedia
             new AnalyzerConfig(
                 attributeFields: $config->attributeFields,
                 allowDirectNew: $config->allowDirectNew,
-                suppressDuplicateCodeWarning: $config->suppressDuplicateCodeWarning,
+                suppressDuplicateIdentifierWarning: $config->suppressDuplicateIdentifierWarning,
                 projectRoot: $config->projectRoot,
             )
         );

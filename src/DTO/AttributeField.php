@@ -9,7 +9,7 @@ readonly class AttributeField
     public function __construct(
         public string $name,
         public string $label,
-        public bool $isCode = false,
+        public bool $isIdentifier = false,
     ) {
     }
 }

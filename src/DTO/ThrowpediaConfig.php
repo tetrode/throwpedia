@@ -16,7 +16,7 @@ readonly class ThrowpediaConfig
         public array $attributeFields,
         public array $outputs,
         public bool $allowDirectNew,
-        public bool $suppressDuplicateCodeWarning = false,
+        public bool $suppressDuplicateIdentifierWarning = false,
         public string $projectRoot = '',
     ) {
     }

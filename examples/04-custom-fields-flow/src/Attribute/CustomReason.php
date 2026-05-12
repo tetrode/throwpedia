@@ -10,7 +10,7 @@ use Attribute;
 class CustomReason
 {
     public function __construct(
-        public string $code,
+        public string $identifier,
         public string $severity,
         public string $ticket
     ) {

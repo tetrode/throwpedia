@@ -40,16 +40,16 @@ class ThrowpediaTest extends TestCase
 
     public function testRunSmokeTest(): void
     {
-        $code = <<<'PHP'
+        $sourcecode = <<<'PHP'
             <?php
             class TestClass {
-                #[ExceptionReason('CODE1', 'Tech', 'Biz')]
+                #[ExceptionReason(identifier: 'CODE1', technicalReason: 'Tech', businessReason: 'Biz')]
                 public function test() {
                     throw MyEx::fail();
                 }
             }
             PHP;
-        file_put_contents($this->tempDir . '/src/TestClass.php', $code);
+        file_put_contents($this->tempDir . '/src/TestClass.php', $sourcecode);
 
         $config = <<<'NEON'
             source:
@@ -132,8 +132,8 @@ class ThrowpediaTest extends TestCase
     public function testRecursiveCollection(): void
     {
         mkdir($this->tempDir . '/src/SubDir');
-        $code = "<?php class SubClass { #[ExceptionReason('SUB', 'T', 'B')] public function m() { throw E::e(); } }";
-        file_put_contents($this->tempDir . '/src/SubDir/SubClass.php', $code);
+        $sourcecode = "<?php class SubClass { #[ExceptionReason(identifier: 'SUB', technicalReason: 'T', businessReason: 'B')] public function m() { throw E::e(); } }";
+        file_put_contents($this->tempDir . '/src/SubDir/SubClass.php', $sourcecode);
 
         $config = <<<'NEON'
             source:
@@ -164,8 +164,8 @@ class ThrowpediaTest extends TestCase
 
     public function testSingleFileSource(): void
     {
-        $code = "<?php class Single { #[ExceptionReason('SINGLE', 'T', 'B')] public function m() { throw E::e(); } }";
-        file_put_contents($this->tempDir . '/Single.php', $code);
+        $sourcecode = "<?php class Single { #[ExceptionReason(identifier: 'SINGLE', technicalReason: 'T', businessReason: 'B')] public function m() { throw E::e(); } }";
+        file_put_contents($this->tempDir . '/Single.php', $sourcecode);
 
         $config = <<<'NEON'
             source:
@@ -220,8 +220,8 @@ class ThrowpediaTest extends TestCase
 
     public function testCaseInsensitiveExtensionMatchingInRender(): void
     {
-        $code = "<?php class Test { #[ExceptionReason('UPPER', 'T', 'B')] public function m() { throw E::e(); } }";
-        file_put_contents($this->tempDir . '/src/Test.php', $code);
+        $sourcecode = "<?php class Test { #[ExceptionReason(identifier: 'UPPER', technicalReason: 'T', businessReason: 'B')] public function m() { throw E::e(); } }";
+        file_put_contents($this->tempDir . '/src/Test.php', $sourcecode);
 
         $config = <<<'NEON'
             source:

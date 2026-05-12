@@ -7,9 +7,9 @@ codebase. It bridges the gap between technical implementation and business logic
 
 ## How it works
 
-Throwpedia scans your source directories for PHP files and identifies methods annotated with the `#[ExceptionReason]`
-attribute (or other custom attributes that you can configure in the configuration file). It correlates these annotations 
-with `throw` statements to build a comprehensive catalog of business-relevant exceptions.
+Throwpedia scans your source directories for PHP files and identifies methods annotated with an attribute (default 
+the `#[ExceptionReason]` attribute). It correlates these annotations with `throw` statements to build a comprehensive 
+catalog of business-relevant exceptions.
 
 ### Key Features
 
@@ -19,12 +19,72 @@ with `throw` statements to build a comprehensive catalog of business-relevant ex
 - **Static Factory Detection**: Identifies common patterns like `throw MyException::invalidData()`.
 - **Direct Instantiation Tracking**: Optionally tracks and includes direct `throw new \Exception()` calls.
 - **Data Deduplication**: Intelligent merging of identical reasons used across different parts of the application.
-- **Quality Assurance**: Warns you if the same exception code is used for different business or technical reasons,
+- **Quality Assurance**: Warns you if the same exception identifier is used for different business or technical reasons,
   ensuring documentation consistency.
+
+## Example
+
+When an unexpected or exceptional condition occurs in a function, an exception is thrown. 
+These exceptions are either caught by a `catch ()` statement or are propagated to the user, where ideally it is captured
+and a nice error message is displayed to the user. Or, in case of an API, captured by the caller of the API. Documenting
+the reasons of an exception in your code now allows generating a list of errors in different formats from the source 
+code.
+
+As an example, the following UserService class throws two Exceptions:
+
+### Source code
+```php 
+class UserService
+{
+    #[ExceptionReason(
+        identifier: 'USER_NOT_FOUND',
+        technicalReason: 'The requested user ID does not exist in the database.',
+        businessReason: 'The user you are looking for could not be found.'
+    )]
+    public function getUser(int $id): void
+    {
+        // ... some logic
+        throw UserException::notFound($id);
+    }
+
+    #[ExceptionReason(
+        identifier: 'USER_ALREADY_EXISTS',
+        technicalReason: 'Duplicate entry for unique email field.',
+        businessReason: 'An account with this email already exists.'
+    )]
+    public function register(string $email): void
+    {
+        // ... some logic
+        throw UserException::emailTaken($email);
+    }
+}
+```
+
+Which Throwpedia automatically converts to the following Markdown: 
+### Report
+```markdown 
+
+# Business Exceptions Catalog
+
+**Project:** tetrode/throwpedia (^8.5)
+**Exceptions found:** 2
+
+**Throwpedia Version:** 0.2.0
+**Scan time:** 2026-05-11 20:57:42
+
+## ExceptionReason
+
+| Identifier          | Technical Reason                                      | Business Reason                                  | Exception                                 | Thrown From                       |
+|---------------------|-------------------------------------------------------|--------------------------------------------------|-------------------------------------------|-----------------------------------|
+| USER_ALREADY_EXISTS | Duplicate entry for unique email field.               | An account with this email already exists.       | `App\Exception\UserException::emailTaken` | App\Service\UserService::register |
+| USER_NOT_FOUND      | The requested user ID does not exist in the database. | The user you are looking for could not be found. | `App\Exception\UserException::notFound`   | App\Service\UserService::getUser  |
+
+```
+(Or to json, xml, yaml, toml, csv, tsv,psv if you want)
 
 ## Configuration
 
-Throwpedia is configured via `throwpedia.neon` in your project root, which looks as follows:
+Throwpedia is configured via a file called `throwpedia.neon` in your project root, which looks as follows:
 
 ```neon
 # Source directories to scan (multiple supported)
@@ -39,41 +99,37 @@ source:
 #
 # OR provide a map of attribute names to their specific fields.
 # The key is the parameter name in the attribute constructor.
-# For deduplication and unique identification, one parameter should be named 'code'.
+# For deduplication and unique identification, one parameter should be named 'identifier'.
 attributes:
     ExceptionReason:
-        code: Error Code
+        identifier: Error Identfier
         technicalReason: Technical Reason
         businessReason: Business Reason
     AuditReason:
-        code: Audit ID
+        identifier: Audit ID
         action: Audit Action
 
 # Define custom fields for the attributes (optional)
 # The key is the parameter name in the attribute constructor.
-# 'code: label' indicates the field used for deduplication.
+# 'identifier: label' indicates the field used for deduplication.
 fields:
-    code: Error Code
+    identifier: Error Identifier
     technicalReason: Technical Reason
     businessReason: Business Reason
 
-# Output files (supports .json, .yaml, .yml, .md, .markdown, .csv, .tsv, .psv, .xml, .toml). Remove the ones that you do not need. Format is deducted from the extension
+# Output files (supports .json, .yaml, .yml, .md, .markdown, .csv, .tsv, .psv, .xml, .toml). 
+# Remove the ones that you do not need. Format is deducted from the extension
 outputs:
     - output/exceptions.json
-    - output/exceptions.yaml
     - output/exceptions.md
-    - output/exceptions.csv
-    - output/exceptions.tsv
-    - output/exceptions.psv
-    - output/exceptions.xml
-    - output/exceptions.toml
 
-# If true, direct 'new Exception()' is included in the catalog. 
+# If true, direct 'throw new Exception()' is included in the catalog. This can be useful to gradually convert all 
+# existing 'throw new Exception()' code towards 'throw MyException::MyReason()' 
 # If false, it is reported as a validation error.
 allowDirectNew: false
 
-# If true, duplicate code warnings are suppressed. 
-suppressDuplicateCodeWarning: false
+# If true, duplicate identifier warnings are suppressed. 
+suppressDuplicateIdentifierWarning: false
 ```
 
 ## Installation
@@ -104,8 +160,8 @@ If no configuration file is found, Throwpedia enters an **interactive setup mode
 Throwpedia doesn't just extract data; it validates your documentation quality:
 
 - **Missing Documentation**: Reports methods that throw exceptions but lack the required attributes.
-- **Inconsistent Codes**: Warns if the same code is used with different descriptions. In the output, these are
-  automatically disambiguated (e.g., `code`, `code_1`).
+- **Inconsistent Identifiers**: Warns if the same identifier is used with different descriptions. In the output, these are
+  automatically disambiguated (e.g., `identifier`, `identifier_1`).
 - **IDE Integration**: Validation issues are reported with project-relative paths and line numbers (e.g.,
   `src/Service/MyService.php:42`), allowing you to click directly to the source in IDEs like PhpStorm.
 

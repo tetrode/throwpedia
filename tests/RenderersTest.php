@@ -24,7 +24,7 @@ class RenderersTest extends TestCase
     {
         $this->fields = [
             'ExceptionReason' => [
-                new AttributeField('code', 'Code', true),
+                new AttributeField('identifier', 'Identifier', true),
                 new AttributeField('technical', 'Technical'),
                 new AttributeField('business', 'Business'),
             ],
@@ -33,9 +33,9 @@ class RenderersTest extends TestCase
             'ExceptionReason:ERR_001' => new ExceptionModelEntry(
                 attributeName: 'ExceptionReason',
                 values: [
-                    'code'      => 'ERR_001',
-                    'business'  => 'User not found',
-                    'technical' => 'Database query returned empty result',
+                    'identifier' => 'ERR_001',
+                    'business'   => 'User not found',
+                    'technical'  => 'Database query returned empty result',
                 ],
                 exception: 'UserNotFoundException',
                 thrown_from: ['UserRepository::get', 'UserService::find'],
@@ -88,9 +88,9 @@ class RenderersTest extends TestCase
             'ExceptionReason:ERR_PIPE' => new ExceptionModelEntry(
                 attributeName: 'ExceptionReason',
                 values: [
-                    'code'      => 'ERR_PIPE',
-                    'business'  => 'Business | with pipe',
-                    'technical' => 'Technical | with pipe',
+                    'identifier' => 'ERR_PIPE',
+                    'business'   => 'Business | with pipe',
+                    'technical'  => 'Technical | with pipe',
                 ],
                 exception: 'Ex',
                 thrown_from: ['Loc'],

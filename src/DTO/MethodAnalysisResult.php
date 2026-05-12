@@ -8,7 +8,7 @@ class MethodAnalysisResult
 {
     /**
      * @param ExceptionAttribute[] $attributes
-     * @param string[] $throws
+     * @param array<int, array{exception: string, line: int}> $throws
      */
     public function __construct(
         public readonly string $file,

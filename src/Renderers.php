@@ -128,20 +128,20 @@ class Renderers
             $text .= str_repeat('-', \strlen($attrName) + 2) . "\n";
 
             $fields = $attributeFields[$attrName] ?? [];
-            $codeField = 'code';
+            $identifierField = 'identifier';
             foreach ($fields as $field) {
-                if ($field->isCode) {
-                    $codeField = $field->name;
+                if ($field->isIdentifier) {
+                    $identifierField = $field->name;
                     break;
                 }
             }
 
             foreach ($entries as $data) {
-                $code = $data->values[$codeField] ?? 'UNKNOWN';
-                $text .= "  ($code)\n";
+                $identifier = $data->values[$identifierField] ?? 'UNKNOWN';
+                $text .= "  ($identifier)\n";
 
                 foreach ($fields as $field) {
-                    if ($field->isCode) {
+                    if ($field->isIdentifier) {
                         continue;
                     }
                     $val = $data->values[$field->name] ?? '';
@@ -294,7 +294,7 @@ class Renderers
         }
 
         $header = array_merge(['Attribute'], array_values($allFieldNames), ['Exception', 'Thrown From']);
-        fputcsv($fp, $header, $separator);
+        fputcsv($fp, $header, $separator, '"', "\\", PHP_EOL);
 
         foreach ($catalog->entries as $entry) {
             $row = [$entry->attributeName];
@@ -303,7 +303,7 @@ class Renderers
             }
             $row[] = $entry->exception;
             $row[] = implode(', ', $entry->thrown_from);
-            fputcsv($fp, $row, $separator);
+            fputcsv($fp, $row, $separator, '"', "\\", PHP_EOL);
         }
 
         rewind($fp);

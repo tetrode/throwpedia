@@ -10,8 +10,8 @@ use Tetrode\Throwpedia\Attributes\ExceptionReason;
 
 class PaymentService
 {
-    #[ExceptionReason(code: 'INVALID_AMOUNT', technicalReason: 'Amount is <= 0', businessReason: 'Please enter a valid amount.')]
-    #[ExceptionReason(code: 'PAYMENT_FAILED', technicalReason: 'Gateway timeout', businessReason: 'We could not process your payment at this time.')]
+    #[ExceptionReason(identifier: 'INVALID_AMOUNT', technicalReason: 'Amount is <= 0', businessReason: 'Please enter a valid amount.')]
+    #[ExceptionReason(identifier: 'PAYMENT_FAILED', technicalReason: 'Gateway timeout', businessReason: 'We could not process your payment at this time.')]
     public function pay(int $amount): void
     {
         if ($amount <= 0) {

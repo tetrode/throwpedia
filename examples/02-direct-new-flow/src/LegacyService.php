@@ -10,7 +10,7 @@ use Tetrode\Throwpedia\Attributes\ExceptionReason;
 
 class LegacyService
 {
-    #[ExceptionReason(code: 'LEGACY_ERROR', technicalReason: 'Something failed in legacy code', businessReason: 'A system error occurred.')]
+    #[ExceptionReason(identifier: 'LEGACY_ERROR', technicalReason: 'Something failed in legacy identifier', businessReason: 'A system error occurred.')]
     public function doSomething(): void
     {
         if (rand(0, 1)) {

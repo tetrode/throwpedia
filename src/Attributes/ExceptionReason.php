@@ -8,7 +8,7 @@ namespace Tetrode\Throwpedia\Attributes;
 class ExceptionReason
 {
     public function __construct(
-        public string $code = 'UNKNOWN',
+        public string $identifier = 'UNKNOWN',
         public string $technicalReason = 'technical reason',
         public string $businessReason = 'business reason'
     ) {

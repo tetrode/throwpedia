@@ -1,26 +1,26 @@
 # Configuration for Flow 01
 source:
-    - examples/01-standard-flow/src
+    - src
 
 attributes:
     - ExceptionReason
 
 fields:
-    code: Code
+    identifier: Code
     technicalReason: Technical Reason
     businessReason: Business Reason
 
 outputs:
-    - examples/01-standard-flow/output/exceptions.json
-    - examples/01-standard-flow/output/exceptions.yaml
-    - examples/01-standard-flow/output/exceptions.md
-    - examples/01-standard-flow/output/exceptions.csv
-    - examples/01-standard-flow/output/exceptions.tsv
-    - examples/01-standard-flow/output/exceptions.psv
-    - examples/01-standard-flow/output/exceptions.xml
-    - examples/01-standard-flow/output/exceptions.toml
+    - output/exceptions.json
+    - output/exceptions.yaml
+    - output/exceptions.md
+    - output/exceptions.csv
+    - output/exceptions.tsv
+    - output/exceptions.psv
+    - output/exceptions.xml
+    - output/exceptions.toml
 
 allowDirectNew: false
 
-# Suppress duplicate code warnings (optional)
-suppressDuplicateCodeWarning: false
+# Suppress duplicate identifier warnings (optional)
+suppressDuplicateIdentifierWarning: false

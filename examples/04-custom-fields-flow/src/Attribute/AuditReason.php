@@ -10,7 +10,7 @@ use Attribute;
 class AuditReason
 {
     public function __construct(
-        public string $code,
+        public string $identifier,
         public string $action
     ) {
     }
