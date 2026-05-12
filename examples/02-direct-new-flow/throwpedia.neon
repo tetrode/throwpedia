@@ -1,18 +1,22 @@
 # Configuration for Flow 02
+# Sources, relative to the throwpedia path
 source:
-    - examples/02-direct-new-flow/src
+    - src
 
+# There is only one attribute
 attributes:
     - ExceptionReason
 
+# And it uses these fields
 fields:
     identifier: Code
     technicalReason: Technical Reason
     businessReason: Business Reason
 
 outputs:
-    - examples/02-direct-new-flow/output/exceptions.yaml
+    - output/exceptions.yaml
 
+# We will allow direct 'throw new Exception()'
 allowDirectNew: true
 
 # Suppress duplicate identifier warnings (optional)

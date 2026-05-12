@@ -1,33 +1,44 @@
-ExceptionReason:DIRECT_NEW_EXCEPTION:
-	attributeName: ExceptionReason
-	values:
-		code: DIRECT_NEW_EXCEPTION
-		technicalReason: Thrown from App\LegacyService::doSomething
-		businessReason: Direct instantiation of Exception
+project:
+	name: unknown
+	php: unknown
+	total_exceptions: 3
 
-	exception: Exception
-	thrown_from:
-		- App\LegacyService::doSomething
+meta:
+	version: '0.2.0'
+	scan_time: '2026-05-12 14:22:47'
 
-ExceptionReason:DIRECT_NEW_RUNTIMEEXCEPTION:
-	attributeName: ExceptionReason
-	values:
-		code: DIRECT_NEW_RUNTIMEEXCEPTION
-		technicalReason: Thrown from App\LegacyService::doSomething
-		businessReason: Direct instantiation of RuntimeException
+entries:
+	ExceptionReason:DIRECT_NEW_EXCEPTION:
+		attributeName: ExceptionReason
+		values:
+			identifier: DIRECT_NEW_EXCEPTION
+			technicalReason: Thrown from App\LegacyService::doSomething:17
+			businessReason: Direct instantiation of Exception
 
-	exception: RuntimeException
-	thrown_from:
-		- App\LegacyService::doSomething
+		exception: Exception
+		thrown_from:
+			- App\LegacyService::doSomething:17
 
-ExceptionReason:LEGACY_ERROR:
-	attributeName: ExceptionReason
-	values:
-		code: LEGACY_ERROR
-		technicalReason: Something failed in legacy code
-		businessReason: A system error occurred.
+	ExceptionReason:DIRECT_NEW_RUNTIMEEXCEPTION:
+		attributeName: ExceptionReason
+		values:
+			identifier: DIRECT_NEW_RUNTIMEEXCEPTION
+			technicalReason: Thrown from App\LegacyService::doSomething:20
+			businessReason: Direct instantiation of RuntimeException
 
-	exception: 'Exception, RuntimeException'
-	thrown_from:
-		- App\LegacyService::doSomething
+		exception: RuntimeException
+		thrown_from:
+			- App\LegacyService::doSomething:20
+
+	ExceptionReason:LEGACY_ERROR:
+		attributeName: ExceptionReason
+		values:
+			identifier: LEGACY_ERROR
+			technicalReason: Something failed in legacy identifier
+			businessReason: A system error occurred.
+
+		exception: 'Exception, RuntimeException'
+		thrown_from:
+			- App\LegacyService::doSomething:17
+			- App\LegacyService::doSomething:20
 

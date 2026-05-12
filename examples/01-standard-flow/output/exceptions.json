@@ -1,36 +1,36 @@
 {
     "project": {
-        "name": "tetrode/throwpedia",
-        "php": "^8.5",
+        "name": "unknown",
+        "php": "unknown",
         "total_exceptions": 2
     },
     "meta": {
-        "version": "0.1.0",
-        "scan_time": "2026-05-11 20:57:42"
+        "version": "0.2.0",
+        "scan_time": "2026-05-12 14:22:47"
     },
     "entries": {
         "ExceptionReason:USER_ALREADY_EXISTS": {
             "attributeName": "ExceptionReason",
             "values": {
-                "code": "USER_ALREADY_EXISTS",
+                "identifier": "USER_ALREADY_EXISTS",
                 "technicalReason": "Duplicate entry for unique email field.",
                 "businessReason": "An account with this email already exists."
             },
             "exception": "App\\Exception\\UserException::emailTaken",
             "thrown_from": [
-                "App\\Service\\UserService::register"
+                "App\\Service\\UserService::register:31"
             ]
         },
         "ExceptionReason:USER_NOT_FOUND": {
             "attributeName": "ExceptionReason",
             "values": {
-                "code": "USER_NOT_FOUND",
+                "identifier": "USER_NOT_FOUND",
                 "technicalReason": "The requested user ID does not exist in the database.",
                 "businessReason": "The user you are looking for could not be found."
             },
             "exception": "App\\Exception\\UserException::notFound",
             "thrown_from": [
-                "App\\Service\\UserService::getUser"
+                "App\\Service\\UserService::getUser:20"
             ]
         }
     }

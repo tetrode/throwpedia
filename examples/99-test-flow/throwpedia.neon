@@ -1,0 +1,19 @@
+# Configuration for Flow 99
+# Sources, relative to the throwpedia path
+source:
+    - src
+
+attributes:
+    - ExReason
+
+fields:
+    theReason: The Reason
+
+outputs:
+    - output/exceptions.json
+    - output/exceptions.md
+
+allowDirectNew: false
+
+# Suppress duplicate identifier warnings (optional)
+suppressDuplicateIdentifierWarning: false

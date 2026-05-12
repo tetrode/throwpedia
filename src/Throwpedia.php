@@ -19,7 +19,7 @@ use Tetrode\Throwpedia\IO\OutputInterface;
 
 class Throwpedia
 {
-    public const string VERSION = '0.1.0';
+    public const string VERSION = '0.2.0';
 
     public function __construct(
         private readonly OutputInterface $output = new ConsoleOutput(),

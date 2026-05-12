@@ -94,7 +94,7 @@ class Renderers
                     $row[] = str_replace('|', '\\|', (string)$val);
                 }
                 $row[] = "`{$data->exception}`";
-                $row[] = implode('<br>', $data->thrown_from);
+                $row[] = implode(' <br>', $data->thrown_from);
 
                 $md .= '| ' . implode(' | ', $row) . " |\n";
             }
@@ -294,6 +294,7 @@ class Renderers
         }
 
         $header = array_merge(['Attribute'], array_values($allFieldNames), ['Exception', 'Thrown From']);
+        /** @noinspection PhpDeprecatedPassingNonEmptyEscapeToCsvFunctionInspection */
         fputcsv($fp, $header, $separator, '"', "\\", PHP_EOL);
 
         foreach ($catalog->entries as $entry) {
@@ -303,6 +304,7 @@ class Renderers
             }
             $row[] = $entry->exception;
             $row[] = implode(', ', $entry->thrown_from);
+            /** @noinspection PhpDeprecatedPassingNonEmptyEscapeToCsvFunctionInspection */
             fputcsv($fp, $row, $separator, '"', "\\", PHP_EOL);
         }
 

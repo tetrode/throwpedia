@@ -8,23 +8,11 @@ use App\Exception\PaymentException;
 use InvalidArgumentException;
 use Tetrode\Throwpedia\Attributes\ExceptionReason;
 
-class PaymentService
+class PaymentRetryService
 {
     #[ExceptionReason(identifier: 'INVALID_AMOUNT', technicalReason: 'Amount is <= 0', businessReason: 'Please enter a valid amount.')]
     #[ExceptionReason(identifier: 'PAYMENT_FAILED', technicalReason: 'Gateway timeout', businessReason: 'We could not process your payment at this time.')]
-    public function payNow(int $amount): void
-    {
-        if ($amount <= 0) {
-            throw new InvalidArgumentException('Amount must be positive');
-        }
-
-        // ... logic
-        throw PaymentException::processingError('Insufficient funds');
-    }
-
-    #[ExceptionReason(identifier: 'INVALID_AMOUNT', technicalReason: 'Amount is <= 0', businessReason: 'Please enter a valid amount.')]
-    #[ExceptionReason(identifier: 'PAYMENT_FAILED', technicalReason: 'Gateway timeout', businessReason: 'We could not process your payment at this time.')]
-    public function payLater(int $amount): void
+    public function retry(int $amount): void
     {
         if ($amount <= 0) {
             throw new InvalidArgumentException('Amount must be positive');

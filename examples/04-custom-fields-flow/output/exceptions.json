@@ -1,48 +1,59 @@
 {
-    "AnotherReason:LOGISTIC_DELAY": {
-        "attributeName": "AnotherReason",
-        "values": {
-            "code": "LOGISTIC_DELAY",
-            "note": "Expected delay 2 days"
-        },
-        "exception": "App\\Exception\\OrderException::insufficientStock",
-        "thrown_from": [
-            "App\\Service\\OrderService::checkout"
-        ]
+    "project": {
+        "name": "unknown",
+        "php": "unknown",
+        "total_exceptions": 4
     },
-    "AuditReason:SECURITY_ALERT": {
-        "attributeName": "AuditReason",
-        "values": {
-            "code": "SECURITY_ALERT",
-            "action": "BLOCK_USER"
-        },
-        "exception": "App\\Exception\\OrderException::invalidCoupon",
-        "thrown_from": [
-            "App\\Service\\OrderService::applyCoupon"
-        ]
+    "meta": {
+        "version": "0.2.0",
+        "scan_time": "2026-05-12 14:22:48"
     },
-    "CustomReason:INVALID_COUPON": {
-        "attributeName": "CustomReason",
-        "values": {
-            "code": "INVALID_COUPON",
-            "severity": "low",
-            "ticket": "JIRA-456"
+    "entries": {
+        "AnotherReason:LOGISTIC_DELAY": {
+            "attributeName": "AnotherReason",
+            "values": {
+                "identifier": "LOGISTIC_DELAY",
+                "note": "Expected delay 2 days"
+            },
+            "exception": "App\\Exception\\OrderException::insufficientStock",
+            "thrown_from": [
+                "App\\Service\\OrderService::checkout:26"
+            ]
         },
-        "exception": "App\\Exception\\OrderException::invalidCoupon",
-        "thrown_from": [
-            "App\\Service\\OrderService::applyCoupon"
-        ]
-    },
-    "CustomReason:OUT_OF_STOCK": {
-        "attributeName": "CustomReason",
-        "values": {
-            "code": "OUT_OF_STOCK",
-            "severity": "critical",
-            "ticket": "JIRA-123"
+        "AuditReason:SECURITY_ALERT": {
+            "attributeName": "AuditReason",
+            "values": {
+                "identifier": "SECURITY_ALERT",
+                "action": "BLOCK_USER"
+            },
+            "exception": "App\\Exception\\OrderException::invalidCoupon",
+            "thrown_from": [
+                "App\\Service\\OrderService::applyCoupon:41"
+            ]
         },
-        "exception": "App\\Exception\\OrderException::insufficientStock",
-        "thrown_from": [
-            "App\\Service\\OrderService::checkout"
-        ]
+        "CustomReason:INVALID_COUPON": {
+            "attributeName": "CustomReason",
+            "values": {
+                "identifier": "INVALID_COUPON",
+                "severity": "low",
+                "ticket": "JIRA-456"
+            },
+            "exception": "App\\Exception\\OrderException::invalidCoupon",
+            "thrown_from": [
+                "App\\Service\\OrderService::applyCoupon:41"
+            ]
+        },
+        "CustomReason:OUT_OF_STOCK": {
+            "attributeName": "CustomReason",
+            "values": {
+                "identifier": "OUT_OF_STOCK",
+                "severity": "critical",
+                "ticket": "JIRA-123"
+            },
+            "exception": "App\\Exception\\OrderException::insufficientStock",
+            "thrown_from": [
+                "App\\Service\\OrderService::checkout:26"
+            ]
+        }
     }
 }

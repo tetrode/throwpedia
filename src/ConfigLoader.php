@@ -32,9 +32,6 @@ class ConfigLoader
     #[ExceptionReason('load', 'configuration file not parsable', 'configuration file is not parsable or empty')]
     public function load(?string $configFile, string $defaultConfigFileName): ThrowpediaConfig
     {
-        $projectRoot = $this->findProjectRoot();
-        $defaultConfigFile = $projectRoot . DIRECTORY_SEPARATOR . $defaultConfigFileName;
-
         if (null !== $configFile) {
             if (!file_exists($configFile)) {
                 throw ConfigurationException::FileNotFound($configFile);
@@ -45,13 +42,16 @@ class ConfigLoader
             if (empty($config)) {
                 throw ConfigurationException::FileNotParsable($configFile);
             }
-            return $this->createConfig($config, $projectRoot);
+            return $this->createConfig($config, \dirname(realpath($configFile)));
         }
+
+        $projectRoot = $this->findProjectRoot();
+        $defaultConfigFile = $projectRoot . DIRECTORY_SEPARATOR . $defaultConfigFileName;
 
         if (file_exists($defaultConfigFile)) {
             /** @var array<string, mixed> $config */
             $config = Neon::decode((string)file_get_contents($defaultConfigFile));
-            return $this->createConfig($config, $projectRoot);
+            return $this->createConfig($config, \dirname(realpath($defaultConfigFile)));
         }
 
         return $this->interactiveSetup($defaultConfigFile);

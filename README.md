@@ -5,11 +5,17 @@
 Throwpedia performs static source-code analysis to extract and document business exceptions throughout your PHP
 codebase. It bridges the gap between technical implementation and business logic by cataloging potential failure points.
 
+Exceptions in code are technical artifacts, but they often represent business-relevant failure scenarios. Throwpedia
+lets you document both the technical reason (what went wrong in code) and the business reason (what it means to the
+user/stakeholder) in one place using PHP 8 attributes.
+
 ## How it works
 
-Throwpedia scans your source directories for PHP files and identifies methods annotated with an attribute (default 
-the `#[ExceptionReason]` attribute). It correlates these annotations with `throw` statements to build a comprehensive 
-catalog of business-relevant exceptions.
+Throwpedia scans your source directories for PHP files and identifies methods annotated with an attribute (default
+the `#[ExceptionReason]` attribute). It correlates these annotations with `throw` statements to build a comprehensive
+catalog of business-relevant exceptions. So, instead of maintaining separate documentation that inevitably goes stale, 
+your exception documentation lives directly in your code via a PHP attribute. Running Throwpedia generates up-to-date
+catalogs in multiple formats (Markdown, JSON, YAML, CSV, XML, etc.).
 
 ### Key Features
 
@@ -24,15 +30,15 @@ catalog of business-relevant exceptions.
 
 ## Example
 
-When an unexpected or exceptional condition occurs in a function, an exception is thrown. 
-These exceptions are either caught by a `catch ()` statement or are propagated to the user, where ideally it is captured
-and a nice error message is displayed to the user. Or, in case of an API, captured by the caller of the API. Documenting
-the reasons of an exception in your code now allows generating a list of errors in different formats from the source 
-code.
+When an unexpected or exceptional condition occurs in a function, an exception is thrown.
+
+These exceptions are either caught by a `catch ()` statement and handled, or they are propagated to the caller in the
+form of an HTTP response.
 
 As an example, the following UserService class throws two Exceptions:
 
 ### Source code
+
 ```php 
 class UserService
 {
@@ -60,26 +66,29 @@ class UserService
 }
 ```
 
-Which Throwpedia automatically converts to the following Markdown: 
+Which Throwpedia automatically converts to the following Markdown:
+
 ### Report
+
 ```markdown 
 
 # Business Exceptions Catalog
 
-**Project:** tetrode/throwpedia (^8.5)
+**Project:** unknown (unknown)
 **Exceptions found:** 2
 
 **Throwpedia Version:** 0.2.0
-**Scan time:** 2026-05-11 20:57:42
+**Scan time:** 2026-05-12 13:36:47
 
 ## ExceptionReason
 
-| Identifier          | Technical Reason                                      | Business Reason                                  | Exception                                 | Thrown From                       |
-|---------------------|-------------------------------------------------------|--------------------------------------------------|-------------------------------------------|-----------------------------------|
-| USER_ALREADY_EXISTS | Duplicate entry for unique email field.               | An account with this email already exists.       | `App\Exception\UserException::emailTaken` | App\Service\UserService::register |
-| USER_NOT_FOUND      | The requested user ID does not exist in the database. | The user you are looking for could not be found. | `App\Exception\UserException::notFound`   | App\Service\UserService::getUser  |
+| Code                | Technical Reason                                      | Business Reason                                  | Exception                                 | Thrown From                          |
+|---------------------|-------------------------------------------------------|--------------------------------------------------|-------------------------------------------|--------------------------------------|
+| USER_ALREADY_EXISTS | Duplicate entry for unique email field.               | An account with this email already exists.       | `App\Exception\UserException::emailTaken` | App\Service\UserService::register:31 |
+| USER_NOT_FOUND      | The requested user ID does not exist in the database. | The user you are looking for could not be found. | `App\Exception\UserException::notFound`   | App\Service\UserService::getUser:20  |
 
 ```
+
 (Or to json, xml, yaml, toml, csv, tsv,psv if you want)
 
 ## Configuration
@@ -87,7 +96,7 @@ Which Throwpedia automatically converts to the following Markdown:
 Throwpedia is configured via a file called `throwpedia.neon` in your project root, which looks as follows:
 
 ```neon
-# Source directories to scan (multiple supported)
+# Sources, relative to the throwpedia path
 source:
     - src
 
@@ -157,11 +166,11 @@ If no configuration file is found, Throwpedia enters an **interactive setup mode
 
 ## Quality & Validation
 
-Throwpedia doesn't just extract data; it validates your documentation quality:
+Throwpedia doesn't just extract data; it validates your exception documentation:
 
-- **Missing Documentation**: Reports methods that throw exceptions but lack the required attributes.
-- **Inconsistent Identifiers**: Warns if the same identifier is used with different descriptions. In the output, these are
-  automatically disambiguated (e.g., `identifier`, `identifier_1`).
+- **Detects Missing Documentation**: Reports methods that throw exceptions but lack the required attributes.
+- **Inconsistent Identifiers**: Warns if the same identifier is used with different descriptions. In the output, these
+  are automatically disambiguated (e.g., `identifier`, `identifier_1`).
 - **IDE Integration**: Validation issues are reported with project-relative paths and line numbers (e.g.,
   `src/Service/MyService.php:42`), allowing you to click directly to the source in IDEs like PhpStorm.
 
@@ -174,8 +183,10 @@ Throwpedia doesn't just extract data; it validates your documentation quality:
 - **XML**: Industry standard for data exchange.
 - **TOML**: A minimal configuration format that's easy to read.
 
-Each output format now includes metadata about the project (name, PHP version, total exceptions found) and the scan itself (Throwpedia version, scan time).
+Each output format now includes metadata about the project (name, PHP version, total exceptions found) and the scan
+itself (Throwpedia version, scan time).
 
 ## Versions
 
-v0.1.0: First version 
+* v0.2.0: 2026-05-11: Added examples, support more output formats, added fields mapping, line numbers, improved deduplication
+* v0.1.0: 2026-05-10: First version 

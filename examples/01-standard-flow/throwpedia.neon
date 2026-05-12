@@ -1,12 +1,15 @@
 # Configuration for Flow 01
+# Sources, relative to the throwpedia path
 source:
     - src
 
+# There is only one attribute here
 attributes:
     - ExceptionReason
 
+# All attributes above use the following fields
 fields:
-    identifier: Code
+    identifier: Unique Identifier
     technicalReason: Technical Reason
     businessReason: Business Reason
 

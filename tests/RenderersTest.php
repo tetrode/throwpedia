@@ -79,7 +79,7 @@ class RenderersTest extends TestCase
         $this->assertStringContainsString('ERR_001', $md);
         $this->assertStringContainsString('User not found', $md);
         $this->assertStringContainsString('`UserNotFoundException`', $md);
-        $this->assertStringContainsString('UserRepository::get<br>UserService::find', $md);
+        $this->assertStringContainsString('UserRepository::get <br>UserService::find', $md);
     }
 
     public function testToMarkdownWithPipes(): void

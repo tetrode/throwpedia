@@ -1,0 +1,33 @@
+{
+  "project": {
+    "name": "unknown",
+    "php": "unknown",
+    "total_exceptions": 2
+  },
+  "meta": {
+    "version": "0.1.0",
+    "scan_time": "2026-05-12 13:31:10"
+  },
+  "entries": {
+    "ExReason:UNKNOWN": {
+      "attributeName": "ExReason",
+      "values": {
+        "theReason": "The requested user ID does not exist in the database."
+      },
+      "exception": "App\\Exception\\UserException::notFound",
+      "thrown_from": [
+        "App\\Service\\UserService::getUser:18"
+      ]
+    },
+    "ExReason:UNKNOWN_1": {
+      "attributeName": "ExReason",
+      "values": {
+        "theReason": "Duplicate entry for unique email field."
+      },
+      "exception": "App\\Exception\\UserException::emailTaken",
+      "thrown_from": [
+        "App\\Service\\UserService::register:27"
+      ]
+    }
+  }
+}

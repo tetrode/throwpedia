@@ -1,19 +1,22 @@
 # Configuration for Flow 03 (Mixed)
+# Sources, relative to the throwpedia path
 source:
-    - examples/03-mixed-flow/src
+    - src
 
+# There is only one attribute
 attributes:
     - ExceptionReason
 
+# And it uses these fields
 fields:
     identifier: Code
     technicalReason: Technical Reason
     businessReason: Business Reason
 
 outputs:
-    - examples/03-mixed-flow/output/exceptions.json
-    - examples/03-mixed-flow/output/exceptions.yaml
-    - examples/03-mixed-flow/output/exceptions.md
+    - output/exceptions.json
+    - output/exceptions.yaml
+    - output/exceptions.md
 
 allowDirectNew: true
 

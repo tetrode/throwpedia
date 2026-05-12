@@ -1,7 +1,9 @@
 # Configuration for Flow 04 (Custom Fields)
+# Sources, relative to the throwpedia path
 source:
-    - examples/04-custom-fields-flow/src
+    - src
 
+# There are three attributes, and each attribute has their own set of fields
 attributes:
     CustomReason:
         identifier: Error Code
@@ -15,8 +17,8 @@ attributes:
         action: Audit Action
 
 outputs:
-    - examples/04-custom-fields-flow/output/exceptions.md
-    - examples/04-custom-fields-flow/output/exceptions.json
+    - output/exceptions.md
+    - output/exceptions.json
 
 allowDirectNew: false
 

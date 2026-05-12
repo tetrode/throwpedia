@@ -1,6 +1,6 @@
 # Configuration for Throwpedia
 
-# Sources
+# Sources, relative to the throwpedia path
 source:
     - src
 
