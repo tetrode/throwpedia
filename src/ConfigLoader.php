@@ -42,7 +42,7 @@ class ConfigLoader
             if (empty($config)) {
                 throw ConfigurationException::FileNotParsable($configFile);
             }
-            return $this->createConfig($config, \dirname(realpath($configFile)));
+            return $this->createConfig($config, \dirname(realpath($configFile) ?: $configFile));
         }
 
         $projectRoot = $this->findProjectRoot();
@@ -51,7 +51,7 @@ class ConfigLoader
         if (file_exists($defaultConfigFile)) {
             /** @var array<string, mixed> $config */
             $config = Neon::decode((string)file_get_contents($defaultConfigFile));
-            return $this->createConfig($config, \dirname(realpath($defaultConfigFile)));
+            return $this->createConfig($config, \dirname(realpath($defaultConfigFile) ?: $defaultConfigFile));
         }
 
         return $this->interactiveSetup($defaultConfigFile);
