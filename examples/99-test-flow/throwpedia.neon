@@ -12,6 +12,8 @@ fields:
 outputs:
     - output/exceptions.json
     - output/exceptions.md
+    - output/exceptions.mermaid
+    - output/exceptions.puml
 
 allowDirectNew: false
 

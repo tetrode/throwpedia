@@ -149,6 +149,8 @@ class Throwpedia
             'psv'            => Renderers::toPsv($catalog, $attributeFields),
             'xml'            => Renderers::toXml($catalog),
             'toml'           => Renderers::toToml($catalog),
+            'mermaid', 'mmd' => Renderers::toMermaid($catalog),
+            'puml'           => Renderers::toPlantUml($catalog),
             default          => null,
         };
     }

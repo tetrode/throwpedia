@@ -5,7 +5,7 @@ project:
 
 meta:
 	version: '0.2.0'
-	scan_time: '2026-05-12 14:22:47'
+	scan_time: '2026-05-13 11:18:26'
 
 entries:
 	ExceptionReason:DIRECT_NEW_EXCEPTION:
@@ -19,6 +19,11 @@ entries:
 		thrown_from:
 			- App\LegacyService::doSomething:17
 
+		call_trees:
+			-
+				name: App\LegacyService::doSomething
+				callers: []
+
 	ExceptionReason:DIRECT_NEW_RUNTIMEEXCEPTION:
 		attributeName: ExceptionReason
 		values:
@@ -29,6 +34,11 @@ entries:
 		exception: RuntimeException
 		thrown_from:
 			- App\LegacyService::doSomething:20
+
+		call_trees:
+			-
+				name: App\LegacyService::doSomething
+				callers: []
 
 	ExceptionReason:LEGACY_ERROR:
 		attributeName: ExceptionReason
@@ -41,4 +51,13 @@ entries:
 		thrown_from:
 			- App\LegacyService::doSomething:17
 			- App\LegacyService::doSomething:20
+
+		call_trees:
+			-
+				name: App\LegacyService::doSomething
+				callers: []
+
+			-
+				name: App\LegacyService::doSomething
+				callers: []
 

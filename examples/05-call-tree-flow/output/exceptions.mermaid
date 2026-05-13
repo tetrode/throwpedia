@@ -1,0 +1,6 @@
+graph TD
+    nd8f77e03e0d6304c18fda0a1a6c9b93a("App\Repository\UserRepository::find")
+    n4a02703be161ea5f4ed1b33494e668d1("App\Service\AuthService::authenticate")
+    n6f57344bc488c67836ed305b3275593f("App\Controller\LoginController::login")
+    n6f57344bc488c67836ed305b3275593f --> n4a02703be161ea5f4ed1b33494e668d1
+    n4a02703be161ea5f4ed1b33494e668d1 --> nd8f77e03e0d6304c18fda0a1a6c9b93a

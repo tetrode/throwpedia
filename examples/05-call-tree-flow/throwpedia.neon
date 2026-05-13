@@ -1,0 +1,9 @@
+source:
+    - src
+
+outputs:
+    - output/exceptions.md
+    - output/exceptions.mermaid
+    - output/exceptions.puml
+
+allowDirectNew: true

@@ -99,9 +99,67 @@ class Renderers
                 $md .= '| ' . implode(' | ', $row) . " |\n";
             }
             $md .= "\n";
+
+            $md .= "### Calling Trees\n\n";
+            foreach ($entries as $data) {
+                if (!empty($data->call_trees)) {
+                    $identifier = $data->values['identifier'] ?? $data->exception;
+                    $md .= "#### $identifier\n\n";
+                    $md .= "```\n";
+                    foreach ($data->call_trees as $tree) {
+                        $paths = self::getForwardPaths($tree);
+                        foreach ($paths as $path) {
+                            $md .= self::renderForwardPath($path, $data->exception);
+                            $md .= "\n";
+                        }
+                    }
+                    $md .= "```\n\n";
+                }
+            }
         }
 
         return trim($md) . "\n";
+    }
+
+    /**
+     * @param string[] $path
+     */
+    private static function renderForwardPath(array $path, string $exception): string
+    {
+        $out = '';
+        foreach ($path as $i => $method) {
+            $indent = str_repeat('     ', $i);
+            if ($i > 0) {
+                $indent = str_repeat('     ', $i - 1) . ' └── ';
+            }
+            $out .= $indent . $method . "()\n";
+        }
+        $out .= str_repeat('     ', \count($path)) . 'throws ' . $exception . "\n";
+
+        return $out;
+    }
+
+    /**
+     * @param array<string, mixed> $tree
+     * @param string[] $suffix
+     *
+     * @return array<int, array<int, string>>
+     */
+    private static function getForwardPaths(array $tree, array $suffix = []): array
+    {
+        $currentPath = array_merge([$tree['name']], $suffix);
+        if (empty($tree['callers'])) {
+            return [$currentPath];
+        }
+
+        $allPaths = [];
+        foreach ($tree['callers'] as $caller) {
+            foreach (self::getForwardPaths($caller, $currentPath) as $p) {
+                $allPaths[] = $p;
+            }
+        }
+
+        return $allPaths;
     }
 
     /**
@@ -276,7 +334,82 @@ class Renderers
     }
 
     /**
-     * @param array<string, AttributeField[]> $attributeFields
+     */
+    public static function toMermaid(ExceptionCatalog $catalog): string
+    {
+        $mmd = "graph TD\n";
+        /** @var array<string, mixed> $nodes */
+        $nodes = [];
+        /** @var string[] $edges */
+        $edges = [];
+
+        foreach ($catalog->entries as $entry) {
+            foreach ($entry->call_trees as $tree) {
+                self::renderMermaidNode($tree, $nodes, $edges);
+            }
+        }
+
+        foreach ($nodes as $nodeId => $label) {
+            $mmd .= "    $nodeId(\"$label\")\n";
+        }
+        foreach (array_unique($edges) as $edge) {
+            $mmd .= "    $edge\n";
+        }
+
+        return $mmd;
+    }
+
+    /**
+     * @param array<string, mixed> $tree
+     * @param array<string, mixed> $nodes
+     * @param string[] $edges
+     */
+    private static function renderMermaidNode(array $tree, array &$nodes, array &$edges): string
+    {
+        $name = $tree['name'];
+        $nodeId = 'n' . md5($name);
+        $nodes[$nodeId] = $name;
+
+        foreach ($tree['callers'] ?? [] as $callerTree) {
+            $callerId = self::renderMermaidNode($callerTree, $nodes, $edges);
+            $edges[] = "$callerId --> $nodeId";
+        }
+
+        return $nodeId;
+    }
+
+    public static function toPlantUml(ExceptionCatalog $catalog): string
+    {
+        $puml = "@startuml\n";
+        $puml .= "skinparam shadowing false\n";
+
+        $edges = [];
+        foreach ($catalog->entries as $entry) {
+            foreach ($entry->call_trees as $tree) {
+                self::renderPlantUmlNode($tree, $edges);
+            }
+        }
+
+        $puml .= implode("\n", array_unique($edges)) . "\n";
+        $puml .= "@enduml\n";
+        return $puml;
+    }
+
+    /**
+     * @param array<string, mixed> $tree
+     * @param string[] $edges
+     */
+    private static function renderPlantUmlNode(array $tree, array &$edges): void
+    {
+        $name = $tree['name'];
+        foreach ($tree['callers'] ?? [] as $callerTree) {
+            $edges[] = "(\"{$callerTree['name']}\") --> (\"$name\")";
+            self::renderPlantUmlNode($callerTree, $edges);
+        }
+    }
+
+    /**
+     * @param array<string, DTO\AttributeField[]> $attributeFields
      */
     private static function toDelimited(ExceptionCatalog $catalog, array $attributeFields, string $separator): string
     {
@@ -295,7 +428,7 @@ class Renderers
 
         $header = array_merge(['Attribute'], array_values($allFieldNames), ['Exception', 'Thrown From']);
         /** @noinspection PhpDeprecatedPassingNonEmptyEscapeToCsvFunctionInspection */
-        fputcsv($fp, $header, $separator, '"', "\\", PHP_EOL);
+        fputcsv($fp, $header, $separator, '"', '\\', PHP_EOL);
 
         foreach ($catalog->entries as $entry) {
             $row = [$entry->attributeName];
@@ -305,7 +438,7 @@ class Renderers
             $row[] = $entry->exception;
             $row[] = implode(', ', $entry->thrown_from);
             /** @noinspection PhpDeprecatedPassingNonEmptyEscapeToCsvFunctionInspection */
-            fputcsv($fp, $row, $separator, '"', "\\", PHP_EOL);
+            fputcsv($fp, $row, $separator, '"', '\\', PHP_EOL);
         }
 
         rewind($fp);

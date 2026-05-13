@@ -19,6 +19,8 @@ attributes:
 outputs:
     - output/exceptions.md
     - output/exceptions.json
+    - output/exceptions.mermaid
+    - output/exceptions.puml
 
 allowDirectNew: false
 

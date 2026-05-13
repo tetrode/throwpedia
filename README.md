@@ -5,9 +5,13 @@
 Throwpedia performs static source-code analysis to extract and document business exceptions throughout your PHP
 codebase. It bridges the gap between technical implementation and business logic by cataloging potential failure points.
 
-Exceptions in code are technical artifacts, but they often represent business-relevant failure scenarios. Throwpedia
-lets you document both the technical reason (what went wrong in code) and the business reason (what it means to the
-user/stakeholder) in one place using PHP 8 attributes.
+Exceptions in code are technical artifacts, but they often represent distinct business-relevant failure scenarios. 
+Throwpedia will generate a list of all exceptions. When attributes are added to t with the annotated 
+
+// TODO //
+
+lets you document both the technical reason (what went wrong in the code) and the business reason (what it 
+means to the user) in one place using PHP 8 attributes.
 
 ## How it works
 
@@ -89,7 +93,7 @@ Which Throwpedia automatically converts to the following Markdown:
 
 ```
 
-(Or to json, xml, yaml, toml, csv, tsv,psv if you want)
+(Or to json, xml, yaml, toml, csv, tsv, psv if you want)
 
 ## Configuration
 
@@ -188,5 +192,5 @@ itself (Throwpedia version, scan time).
 
 ## Versions
 
-* v0.2.0: 2026-05-11: Added examples, support more output formats, added fields mapping, line numbers, improved deduplication
+* v0.2.0: 2026-05-12: Added examples, support more output formats, added fields mapping, line numbers, improved deduplication
 * v0.1.0: 2026-05-10: First version 

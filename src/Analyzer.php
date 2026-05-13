@@ -14,6 +14,7 @@ use Tetrode\Throwpedia\DTO\DirectNewThrow;
 use Tetrode\Throwpedia\DTO\ExceptionCatalog;
 use Tetrode\Throwpedia\DTO\ExceptionModelEntry;
 use Tetrode\Throwpedia\DTO\ExtractionResults;
+use Tetrode\Throwpedia\DTO\MethodAnalysisResult;
 use Tetrode\Throwpedia\DTO\ProjectInfo;
 use Tetrode\Throwpedia\DTO\ScanMeta;
 use Tetrode\Throwpedia\DTO\ValidationIssue;
@@ -170,6 +171,8 @@ class Analyzer
             $this->appendDirectNewThrows($model, $results->directNewThrows);
         }
 
+        $this->enrichModelWithCallTrees($model, $results);
+
         ksort($model);
 
         $projectInfo = $this->getProjectInfo($this->config->projectRoot, \count($model));
@@ -237,6 +240,81 @@ class Analyzer
                 thrown_from: [$location],
             );
         }
+    }
+
+    /**
+     * @param array<string, ExceptionModelEntry> $model
+     */
+    private function enrichModelWithCallTrees(array &$model, ExtractionResults $results): void
+    {
+        $allMethods = [];
+        foreach ($results->methods as $method) {
+            $key = ($method->class ? $method->class . '::' : '') . $method->method;
+            $allMethods[$key] = $method;
+        }
+
+        foreach ($model as $key => $entry) {
+            $trees = [];
+            foreach ($entry->thrown_from as $location) {
+                $lastColon = strrpos($location, ':');
+                if (false !== $lastColon && is_numeric(substr($location, $lastColon + 1))) {
+                    $targetMethodKey = substr($location, 0, $lastColon);
+                } else {
+                    $targetMethodKey = $location;
+                }
+
+                $trees[] = $this->findReverseCallTree($targetMethodKey, $allMethods);
+            }
+
+            $model[$key] = new ExceptionModelEntry(
+                attributeName: $entry->attributeName,
+                values: $entry->values,
+                exception: $entry->exception,
+                thrown_from: $entry->thrown_from,
+                call_trees: $trees
+            );
+        }
+    }
+
+    /**
+     * @param array<string, MethodAnalysisResult> $allMethods
+     * @param string[] $visited
+     *
+     * @return array<string, mixed>
+     */
+    private function findReverseCallTree(string $targetMethod, array $allMethods, int $depth = 0, array $visited = []): array
+    {
+        if ($depth > 5 || \in_array($targetMethod, $visited, true)) {
+            return ['name' => $targetMethod];
+        }
+        $visited[] = $targetMethod;
+
+        $callers = [];
+        foreach ($allMethods as $callerKey => $methodData) {
+            foreach ($methodData->calls as $call) {
+                $callTarget = ($call['class'] ? $call['class'] . '::' : '') . $call['method'];
+                if ($callTarget === $targetMethod) {
+                    $callers[] = $callerKey;
+                } elseif (null === $call['class']) {
+                    $targetParts = explode('::', $targetMethod);
+                    $targetMethodName = $targetParts[1] ?? $targetParts[0];
+                    if ($call['method'] === $targetMethodName) {
+                        $callers[] = $callerKey;
+                    }
+                }
+            }
+        }
+
+        $callers = array_unique($callers);
+        $callerTrees = [];
+        foreach ($callers as $caller) {
+            $callerTrees[] = $this->findReverseCallTree($caller, $allMethods, $depth + 1, $visited);
+        }
+
+        return [
+            'name'    => $targetMethod,
+            'callers' => $callerTrees,
+        ];
     }
 
     /**

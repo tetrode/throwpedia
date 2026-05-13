@@ -1,0 +1,5 @@
+@startuml
+skinparam shadowing false
+("App\Service\AuthService::authenticate") --> ("App\Repository\UserRepository::find")
+("App\Controller\LoginController::login") --> ("App\Service\AuthService::authenticate")
+@enduml

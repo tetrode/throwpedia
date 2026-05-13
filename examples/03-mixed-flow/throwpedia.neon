@@ -17,6 +17,8 @@ outputs:
     - output/exceptions.json
     - output/exceptions.yaml
     - output/exceptions.md
+    - output/exceptions.mermaid
+    - output/exceptions.puml
 
 allowDirectNew: true
 

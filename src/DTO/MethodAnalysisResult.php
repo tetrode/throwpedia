@@ -9,6 +9,7 @@ class MethodAnalysisResult
     /**
      * @param ExceptionAttribute[] $attributes
      * @param array<int, array{exception: string, line: int}> $throws
+     * @param array<int, array{class: ?string, method: string, line: int}> $calls
      */
     public function __construct(
         public readonly string $file,
@@ -17,6 +18,7 @@ class MethodAnalysisResult
         public readonly string $method,
         public readonly array $attributes,
         public array $throws,
+        public array $calls = [],
     ) {
     }
 }

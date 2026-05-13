@@ -6,7 +6,7 @@
     },
     "meta": {
         "version": "0.2.0",
-        "scan_time": "2026-05-12 14:22:48"
+        "scan_time": "2026-05-13 11:18:26"
     },
     "entries": {
         "AnotherReason:LOGISTIC_DELAY": {
@@ -18,6 +18,12 @@
             "exception": "App\\Exception\\OrderException::insufficientStock",
             "thrown_from": [
                 "App\\Service\\OrderService::checkout:26"
+            ],
+            "call_trees": [
+                {
+                    "name": "App\\Service\\OrderService::checkout",
+                    "callers": []
+                }
             ]
         },
         "AuditReason:SECURITY_ALERT": {
@@ -29,6 +35,12 @@
             "exception": "App\\Exception\\OrderException::invalidCoupon",
             "thrown_from": [
                 "App\\Service\\OrderService::applyCoupon:41"
+            ],
+            "call_trees": [
+                {
+                    "name": "App\\Service\\OrderService::applyCoupon",
+                    "callers": []
+                }
             ]
         },
         "CustomReason:INVALID_COUPON": {
@@ -41,6 +53,12 @@
             "exception": "App\\Exception\\OrderException::invalidCoupon",
             "thrown_from": [
                 "App\\Service\\OrderService::applyCoupon:41"
+            ],
+            "call_trees": [
+                {
+                    "name": "App\\Service\\OrderService::applyCoupon",
+                    "callers": []
+                }
             ]
         },
         "CustomReason:OUT_OF_STOCK": {
@@ -53,6 +71,12 @@
             "exception": "App\\Exception\\OrderException::insufficientStock",
             "thrown_from": [
                 "App\\Service\\OrderService::checkout:26"
+            ],
+            "call_trees": [
+                {
+                    "name": "App\\Service\\OrderService::checkout",
+                    "callers": []
+                }
             ]
         }
     }

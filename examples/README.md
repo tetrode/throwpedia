@@ -65,6 +65,22 @@ To run this example:
 ./bin/throwpedia -f examples/04-custom-fields-flow/throwpedia.neon
 ```
 
+## Flow 05: Call Tree Flow
+
+Located in `05-call-tree-flow/`.
+
+This flow demonstrates the call tree and diagramming features:
+
+- Automatically builds a reverse call graph from entry points (Controllers) to the methods where exceptions are thrown.
+- Renders hierarchical calling trees in the Markdown report.
+- Generates visual diagrams in Mermaid and PlantUML formats.
+
+To run this example:
+
+```bash
+./bin/throwpedia -f examples/05-call-tree-flow/throwpedia.neon
+```
+
 ## Running throwpedia
 
 You can run throwpedia from the project root using the provided `bin/throwpedia` script.

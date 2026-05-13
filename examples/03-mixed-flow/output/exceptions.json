@@ -6,7 +6,7 @@
     },
     "meta": {
         "version": "0.2.0",
-        "scan_time": "2026-05-12 14:22:48"
+        "scan_time": "2026-05-13 11:18:26"
     },
     "entries": {
         "ExceptionReason:DIRECT_NEW_INVALIDARGUMENTEXCEPTION": {
@@ -19,6 +19,12 @@
             "exception": "InvalidArgumentException",
             "thrown_from": [
                 "App\\Service\\PaymentService::payNow:18"
+            ],
+            "call_trees": [
+                {
+                    "name": "App\\Service\\PaymentService::payNow",
+                    "callers": []
+                }
             ]
         },
         "ExceptionReason:DIRECT_NEW_INVALIDARGUMENTEXCEPTION_1": {
@@ -31,6 +37,12 @@
             "exception": "InvalidArgumentException",
             "thrown_from": [
                 "App\\Service\\PaymentService::payLater:30"
+            ],
+            "call_trees": [
+                {
+                    "name": "App\\Service\\PaymentService::payLater",
+                    "callers": []
+                }
             ]
         },
         "ExceptionReason:DIRECT_NEW_INVALIDARGUMENTEXCEPTION_2": {
@@ -43,6 +55,12 @@
             "exception": "InvalidArgumentException",
             "thrown_from": [
                 "App\\Service\\PaymentRetryService::retry:18"
+            ],
+            "call_trees": [
+                {
+                    "name": "App\\Service\\PaymentRetryService::retry",
+                    "callers": []
+                }
             ]
         },
         "ExceptionReason:INVALID_AMOUNT": {
@@ -60,6 +78,32 @@
                 "App\\Service\\PaymentService::payLater:34",
                 "App\\Service\\PaymentRetryService::retry:18",
                 "App\\Service\\PaymentRetryService::retry:22"
+            ],
+            "call_trees": [
+                {
+                    "name": "App\\Service\\PaymentService::payNow",
+                    "callers": []
+                },
+                {
+                    "name": "App\\Service\\PaymentService::payNow",
+                    "callers": []
+                },
+                {
+                    "name": "App\\Service\\PaymentService::payLater",
+                    "callers": []
+                },
+                {
+                    "name": "App\\Service\\PaymentService::payLater",
+                    "callers": []
+                },
+                {
+                    "name": "App\\Service\\PaymentRetryService::retry",
+                    "callers": []
+                },
+                {
+                    "name": "App\\Service\\PaymentRetryService::retry",
+                    "callers": []
+                }
             ]
         },
         "ExceptionReason:PAYMENT_FAILED": {
@@ -77,6 +121,32 @@
                 "App\\Service\\PaymentService::payLater:34",
                 "App\\Service\\PaymentRetryService::retry:18",
                 "App\\Service\\PaymentRetryService::retry:22"
+            ],
+            "call_trees": [
+                {
+                    "name": "App\\Service\\PaymentService::payNow",
+                    "callers": []
+                },
+                {
+                    "name": "App\\Service\\PaymentService::payNow",
+                    "callers": []
+                },
+                {
+                    "name": "App\\Service\\PaymentService::payLater",
+                    "callers": []
+                },
+                {
+                    "name": "App\\Service\\PaymentService::payLater",
+                    "callers": []
+                },
+                {
+                    "name": "App\\Service\\PaymentRetryService::retry",
+                    "callers": []
+                },
+                {
+                    "name": "App\\Service\\PaymentRetryService::retry",
+                    "callers": []
+                }
             ]
         }
     }

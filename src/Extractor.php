@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tetrode\Throwpedia;
 
 use PhpParser\Node;
+use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Name;
@@ -81,6 +82,8 @@ class Extractor extends NodeVisitorAbstract
             $node instanceof ClassMethod                     => $this->handleClassMethod($node),
             $node instanceof Function_                       => $this->handleFunction($node),
             $node instanceof Node\Expr\Throw_                => $this->handleThrow($node),
+            $node instanceof Node\Expr\StaticCall            => $this->handleCall($node),
+            $node instanceof Node\Expr\MethodCall            => $this->handleCall($node),
             default                                          => null,
         };
 
@@ -238,6 +241,37 @@ class Extractor extends NodeVisitorAbstract
         }
 
         return $attributes;
+    }
+
+    private function handleCall(Node $node): void
+    {
+        if (!$this->currentMethodKey || !isset($this->methods[$this->currentMethodKey])) {
+            return;
+        }
+
+        $className = null;
+        $methodName = null;
+
+        if ($node instanceof StaticCall) {
+            if ($node->class instanceof Name) {
+                $className = $node->class->toString();
+            }
+            if ($node->name instanceof Node\Identifier) {
+                $methodName = $node->name->toString();
+            }
+        } elseif ($node instanceof MethodCall) {
+            if ($node->name instanceof Node\Identifier) {
+                $methodName = $node->name->toString();
+            }
+        }
+
+        if ($methodName) {
+            $this->methods[$this->currentMethodKey]->calls[] = [
+                'class'  => $className,
+                'method' => $methodName,
+                'line'   => $node->getLine(),
+            ];
+        }
     }
 
     private function handleThrow(Node $node): void

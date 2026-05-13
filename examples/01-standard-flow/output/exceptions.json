@@ -6,7 +6,7 @@
     },
     "meta": {
         "version": "0.2.0",
-        "scan_time": "2026-05-12 14:22:47"
+        "scan_time": "2026-05-13 11:18:26"
     },
     "entries": {
         "ExceptionReason:USER_ALREADY_EXISTS": {
@@ -19,6 +19,12 @@
             "exception": "App\\Exception\\UserException::emailTaken",
             "thrown_from": [
                 "App\\Service\\UserService::register:31"
+            ],
+            "call_trees": [
+                {
+                    "name": "App\\Service\\UserService::register",
+                    "callers": []
+                }
             ]
         },
         "ExceptionReason:USER_NOT_FOUND": {
@@ -31,6 +37,12 @@
             "exception": "App\\Exception\\UserException::notFound",
             "thrown_from": [
                 "App\\Service\\UserService::getUser:20"
+            ],
+            "call_trees": [
+                {
+                    "name": "App\\Service\\UserService::getUser",
+                    "callers": []
+                }
             ]
         }
     }
